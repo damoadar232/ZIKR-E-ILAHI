@@ -1,0 +1,10 @@
+{
+  "description": "Explore Islamic devotional content including Naats, Quranic verses, audio, e-books, and creative services in a peaceful, elegant, and accessible platform.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
