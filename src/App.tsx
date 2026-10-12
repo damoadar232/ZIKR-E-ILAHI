@@ -11,6 +11,7 @@ const photos = {
   mosque: "https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1200&q=82",
   minaret: "https://images.unsplash.com/photo-1567712595315-545da0d341b2?auto=format&fit=crop&w=1200&q=82",
 };
+const heroVideo = "/videos/zikr-e-ilahi-hero.mp4";
 
 const lyrics = [
   { title: "Mustafa Jaan-e", artist: "Owais Raza Qadri", writer: "Imam Ahmed Raza Khan", category: "Durood-o-Salam", language: "Urdu", date: "12 May 2025", image: "https://images.unsplash.com/photo-1512632578888-169bbbc64f33?auto=format&fit=crop&w=1200&q=82" },
@@ -160,6 +161,33 @@ function SearchBox({ value, setValue, placeholder = "Search by title, artist, wr
 
 function Home({ go }: { go: (r: Route) => void }) {
   const heroRef = useReveal<HTMLDivElement>();
+  const servicePreviewRef = useRef<HTMLElement>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  useEffect(() => {
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () => setPrefersReducedMotion(motionPreference.matches);
+    motionPreference.addEventListener("change", updateMotionPreference);
+    return () => motionPreference.removeEventListener("change", updateMotionPreference);
+  }, []);
+  useEffect(() => {
+    const section = servicePreviewRef.current;
+    if (!section) return;
+    if (!("IntersectionObserver" in window)) return;
+
+    section.classList.add("services-reveal-ready");
+    try {
+      const observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) {
+          section.classList.add("services-revealed");
+          observer.unobserve(section);
+        }
+      }, { threshold: 0.2 });
+      observer.observe(section);
+      return () => observer.disconnect();
+    } catch {
+      section.classList.add("services-revealed");
+    }
+  }, []);
   const features = [
     ["pen", "Lyrics", "Naats, Hamd, Manqabat & Sufi Kalam", "lyrics"],
     ["book", "The Holy Quran", "Read Surahs with trusted translations", "quran"],
@@ -168,7 +196,8 @@ function Home({ go }: { go: (r: Route) => void }) {
     ["grid", "Creative Services", "Production for devotional creators", "services"],
   ] as const;
   return <main>
-    <section className="hero" style={{ backgroundImage: `linear-gradient(90deg,rgba(12,12,11,.96) 8%,rgba(12,12,11,.78) 48%,rgba(12,12,11,.38)),url(${photos.hero})` }}>
+    <section className="hero" style={{ backgroundImage: `url(${photos.hero})` }}>
+      {!prefersReducedMotion && <video className="hero-background-video" autoPlay muted loop playsInline preload="metadata" poster={photos.hero} aria-hidden="true" tabIndex={-1}><source src={heroVideo} type="video/mp4" /></video>}
       <div className="hero-pattern" /><div ref={heroRef} className="container hero-content reveal"><span className="eyebrow">A SANCTUARY FOR THE HEART</span><h1>Find Peace in<br /><em>Remembrance</em> of Allah</h1><p>Explore beautiful Naats, Quranic verses, devotional audio, and Islamic literature in one peaceful place.</p><div className="button-row"><Btn onClick={() => go("lyrics")} icon="arrow">Explore Devotional Content</Btn><Btn onClick={() => go("quran")} variant="ghost">Read the Quran</Btn></div><div className="hero-note"><span>ٱذْكُرُوا ٱللَّهَ</span><i />Remember Allah often</div></div>
     </section>
     <section className="quick container"><div className="feature-grid">{features.map(([icon, title, text, path], i) => <Reveal className="card-reveal" delay={i * 80} key={title}><button className="feature-card" onClick={() => go(path)}><span className="feature-icon"><Icon name={icon} /></span><span><b>{title}</b><small>{text}</small></span><Icon name="arrow" size={18} /></button></Reveal>)}</div></section>
@@ -176,7 +205,7 @@ function Home({ go }: { go: (r: Route) => void }) {
     <section className="quran-feature"><Reveal className="container quran-feature-inner"><div className="calligraphy"><span>القرآن</span><small>THE HOLY QURAN</small></div><div><span className="eyebrow">READ • REFLECT • UNDERSTAND</span><h2>Reconnect Through<br />the Holy Quran</h2><p>Browse all Surahs and Paras with a serene reading experience and carefully presented translations.</p><div className="mini-links">{["Surah", "Para", "Quranic Topics", "Quranic Quotes"].map(x => <button onClick={() => go(x === "Para" ? "para" : x === "Surah" ? "surahs" : "quran-topics")} key={x}>{x}<Icon name="chevron" size={14} /></button>)}</div><Btn onClick={() => go("quran")} icon="arrow">Explore Quran</Btn></div></Reveal></section>
     <section className="section dark-section"><div className="container"><SectionHead eyebrow="Listen & Reflect" title="Latest Devotional Audio" body="Soulful recitations and timeless words of devotion." action="View All Audio" onAction={() => go("audio")} /><div className="audio-grid">{audio.map((x, i) => <AudioCard key={x.title} item={x} index={i} onClick={() => go("audio-detail")} />)}</div></div></section>
     <section className="section container"><SectionHead eyebrow="Knowledge for the Soul" title="Featured E-Books" body="Discover a curated library of Islamic literature." action="Explore E-Books" onAction={() => go("ebooks")} /><div className="book-grid">{books.map((x, i) => <BookCard item={x} key={x.title} index={i} onClick={() => go("book-detail")} />)}</div></section>
-    <section className="service-preview"><div className="container service-preview-grid"><div><span className="eyebrow">Creative Studio</span><h2>Devotional content,<br /><em>beautifully crafted.</em></h2><p>From pristine audio to thoughtful visuals, we help creators share their message with clarity and care.</p><Btn onClick={() => go("services")} icon="arrow">View Our Services</Btn></div><div className="service-list">{["Naat Mixing & Mastering", "Video Editing", "Thumbnails & Posters", "Audio Distribution", "YouTube Management"].map((x, i) => <button key={x} onClick={() => go("services")}><span>0{i + 1}</span><b>{x}</b><Icon name="arrow" /></button>)}</div></div></section>
+    <section ref={servicePreviewRef} className="service-preview"><div className="container service-preview-grid"><div className="service-intro"><span className="eyebrow">Creative Studio</span><h2>Devotional content,<br /><em>beautifully crafted.</em></h2><p>From pristine audio to thoughtful visuals, we help creators share their message with clarity and care.</p><Btn onClick={() => go("services")} icon="arrow">View Our Services</Btn></div><div className="service-list">{["Naat Mixing & Mastering", "Video Editing", "Thumbnails & Posters", "Audio Distribution", "YouTube Management"].map((x, i) => <button className="service-row" key={x} onClick={() => go("services")}><span>0{i + 1}</span><b>{x}</b><Icon name="arrow" /></button>)}</div></div></section>
     <section className="closing"><div className="ornament">✦</div><span className="eyebrow">BEGIN YOUR JOURNEY</span><h2>Let every word bring<br />your heart closer.</h2><p>Explore a peaceful collection made for remembrance and reflection.</p><Btn onClick={() => go("lyrics")} icon="arrow">Discover Zikr-e-Ilahi</Btn></section>
   </main>;
 }
