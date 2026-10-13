@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { audioSources, ayahAudioSources, ayahContent, juzStarts, mushafPageStarts, surahMeanings, translationResources, type TranslationLanguage } from "./quranData";
 
 type Route = string;
 type IconName =
@@ -256,7 +257,7 @@ function QuranHome({ go }: { go: (r: Route) => void }) {
 }
 
 function SurahGrid({ go, items = surahs }: { go: (r: Route) => void; items?: string[][] }) {
-  return <div className="surah-grid">{items.map(x => <button key={x[0]} onClick={() => go("surah-read")}><span className="surah-no">{x[0]}</span><div><b>{x[2]}</b><small>{x[3]} • {x[4]}</small></div><strong lang="ar" dir="rtl">{x[1]}</strong></button>)}</div>;
+  return <div className="surah-grid">{items.map(x => <button key={x[0]} onClick={() => go(`surah-read?surah=${Number(x[0])}&ayah=1`)}><span className="surah-no">{x[0]}</span><div><b>{x[2]}</b><small>{x[3]} • {x[4]}</small></div><strong lang="ar" dir="rtl">{x[1]}</strong></button>)}</div>;
 }
 
 function SurahDirectory({ go }: { go: (r: Route) => void }) {
@@ -266,10 +267,330 @@ function SurahDirectory({ go }: { go: (r: Route) => void }) {
 }
 
 function SurahRead({ go }: { go: (r: Route) => void }) {
-  const [lang, setLang] = useState("English");
-  const [transliteration, setTransliteration] = useState(false);
-  const translations: Record<string, string> = { English: "In the name of Allah, the Most Compassionate, the Most Merciful.", Urdu: "اللہ کے نام سے جو نہایت مہربان، رحم فرمانے والا ہے۔", Hindi: "अल्लाह के नाम से जो अत्यन्त कृपाशील तथा दयावान् है।" };
-  return <main className="reading-bg"><QuranTabs go={go} active="Surah" /><div className="container narrow"><Breadcrumbs items={["Quran", "Surah", "Al-Fatihah"]} go={go} /><section className="surah-header"><span>01</span><div><small>THE OPENING</small><h1>Al-Fatihah</h1><p>Makki • 7 Ayat</p></div><strong dir="rtl" lang="ar">الفاتحة</strong></section><div className="reader-tools quran-tools"><div className="segmented">{["English", "Urdu", "Hindi"].map(x => <button className={lang === x ? "active" : ""} onClick={() => setLang(x)} key={x}>{x}</button>)}</div><label className="toggle-control"><input type="checkbox" checked={transliteration} onChange={e => setTransliteration(e.target.checked)} /><span>Transliteration</span></label><Btn variant="outline" icon="headphones">Listen</Btn></div><div className="ayah"><div className="ayah-top"><span>1:1</span><button aria-label="Play ayah"><Icon name="play" /></button><button aria-label="Bookmark"><Icon name="heart" /></button></div><p className="arabic" dir="rtl" lang="ar">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>{transliteration && <p className="transliteration">Bismillāhir-Raḥmānir-Raḥīm</p>}<p className={`translation ${lang === "Urdu" ? "urdu" : ""}`} dir={lang === "Urdu" ? "rtl" : "ltr"}>{translations[lang]}</p><small>Verified sample: Surah Al-Fatihah 1:1. Translation shown for prototype demonstration.</small></div><div className="sample-boundary"><Icon name="book" /><p>This prototype intentionally shows one verified Ayat sample. The production reader will render all Ayat individually from an authoritative Quran data source with translation attribution.</p></div><div className="surah-pager"><button disabled>← Previous Surah</button><button onClick={() => go("surahs")}>All Surahs</button><button onClick={() => go("surahs")}>Next Surah →</button></div></div></main>;
+  const location = new URLSearchParams(window.location.hash.split("?")[1] || "");
+  const requestedSurah = Number(location.get("surah")) || 1;
+  const initialSurah = Math.min(surahData.length, Math.max(1, requestedSurah));
+  const [surahNumber, setSurahNumber] = useState(initialSurah);
+  const [ayahNumber, setAyahNumber] = useState(() => {
+    const chapter = surahData[initialSurah - 1];
+    const requestedAyah = Number(location.get("ayah")) || 1;
+    return Math.min(chapter[2], Math.max(1, requestedAyah));
+  });
+  const [selectedTranslation, setSelectedTranslation] = useState<TranslationLanguage>("en");
+  const [navOpen, setNavOpen] = useState(false);
+  const [translationOpen, setTranslationOpen] = useState(false);
+  const [navTab, setNavTab] = useState("Surah");
+  const [surahSearch, setSurahSearch] = useState("");
+  const [translationSearch, setTranslationSearch] = useState("");
+  const [mode, setMode] = useState<"verses" | "reading">("verses");
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [highlightedAyah, setHighlightedAyah] = useState(0);
+  const [notice, setNotice] = useState("");
+  const [bookmarks, setBookmarks] = useState<number[]>(() => {
+    try { return JSON.parse(localStorage.getItem("zikr-quran-bookmarks") || "[]") as number[]; }
+    catch { return []; }
+  });
+  const [audioPlaying, setAudioPlaying] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [activeAudioTitle, setActiveAudioTitle] = useState("");
+  const [audioUnavailable, setAudioUnavailable] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const ayahRefs = useRef<Record<string, HTMLElement | null>>({});
+  const pendingNavigation = useRef<string | null>(null);
+  const pendingAudioSeek = useRef<number | null>(null);
+  const lastPlaybackAyah = useRef<number | null>(null);
+  const chapter = surahData[surahNumber - 1];
+  const chapterNumber = surahNumber;
+  const [arabicName, transliteratedName, ayahCount, revelation] = chapter;
+  const chapterContent = ayahContent[chapterNumber] || {};
+  const filteredSurahs = surahData.map((item, index) => ({ item, number: index + 1 })).filter(({ item, number }) => `${number} ${item[0]} ${item[1]} ${surahMeanings[number - 1]}`.toLowerCase().includes(surahSearch.toLowerCase()));
+  const filteredTranslations = translationResources.filter(resource => `${resource.language} ${resource.name} ${resource.attribution}`.toLowerCase().includes(translationSearch.toLowerCase()));
+  const activeJuz = [...juzStarts].reverse().find(start => chapterNumber > start.surah || (chapterNumber === start.surah && ayahNumber >= start.ayah))?.juz || 1;
+  const mappedPage = mushafPageStarts.find(start => start.surah === chapterNumber && start.ayah === ayahNumber)?.page;
+
+  useEffect(() => {
+    try { localStorage.setItem("zikr-quran-bookmarks", JSON.stringify(bookmarks)); }
+    catch { setNotice("Bookmarks are available for this session, but local storage is unavailable."); }
+  }, [bookmarks]);
+
+  useEffect(() => {
+    const target = pendingNavigation.current;
+    if (!target) return;
+    const node = document.getElementById(`ayah-${target.replace(":", "-")}`);
+    if (!node) return;
+    node.scrollIntoView({ behavior: "smooth", block: "center" });
+    pendingNavigation.current = null;
+    const timeout = window.setTimeout(() => setHighlightedAyah(0), 2200);
+    return () => window.clearTimeout(timeout);
+  }, [chapterNumber, ayahNumber]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.hash.split("?")[1] || "");
+      const nextSurah = Math.min(surahData.length, Math.max(1, Number(params.get("surah")) || 1));
+      const nextAyah = Math.min(surahData[nextSurah - 1][2], Math.max(1, Number(params.get("ayah")) || 1));
+      setSurahNumber(nextSurah);
+      setAyahNumber(nextAyah);
+      setHighlightedAyah(nextAyah);
+      pendingNavigation.current = `${nextSurah}:${nextAyah}`;
+      audioRef.current?.pause();
+      if (audioRef.current) { audioRef.current.removeAttribute("src"); audioRef.current.load(); }
+      setActiveAudioTitle("");
+      setAudioUnavailable(false);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (!navOpen && !translationOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setNavOpen(false); setTranslationOpen(false); }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [navOpen, translationOpen]);
+
+  const updateLocation = (nextSurah: number, nextAyah: number, replace = false) => {
+    const url = `#surah-read?surah=${nextSurah}&ayah=${nextAyah}`;
+    if (replace) window.history.replaceState(null, "", url);
+    else window.history.pushState(null, "", url);
+  };
+  const stopAudio = () => {
+    const player = audioRef.current;
+    player?.pause();
+    if (player) { player.removeAttribute("src"); player.load(); }
+    setAudioPlaying(false);
+    setAudioProgress(0);
+    setAudioDuration(0);
+    setActiveAudioTitle("");
+    setAudioUnavailable(false);
+    pendingAudioSeek.current = null;
+    lastPlaybackAyah.current = null;
+  };
+  const selectSurah = (nextSurah: number) => {
+    const nextChapter = surahData[nextSurah - 1];
+    setSurahNumber(nextSurah);
+    setAyahNumber(1);
+    setHighlightedAyah(1);
+    pendingNavigation.current = `${nextSurah}:1`;
+    stopAudio();
+    setNotice("");
+    setNavOpen(false);
+    updateLocation(nextSurah, 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (!nextChapter) setNotice("That Surah is not available in the local catalog.");
+  };
+  const selectVerseSurah = (nextSurah: number) => {
+    const nextAyah = Math.min(ayahNumber, surahData[nextSurah - 1][2]);
+    setSurahNumber(nextSurah);
+    setAyahNumber(nextAyah);
+    setHighlightedAyah(nextAyah);
+    pendingNavigation.current = `${nextSurah}:${nextAyah}`;
+    stopAudio();
+    updateLocation(nextSurah, nextAyah);
+  };
+  const navigateToAyah = (nextSurah: number, nextAyah: number) => {
+    if (!Number.isInteger(nextSurah) || !Number.isInteger(nextAyah) || nextSurah < 1 || nextSurah > surahData.length || nextAyah < 1 || nextAyah > surahData[nextSurah - 1][2]) {
+      return;
+    }
+    setSurahNumber(nextSurah);
+    setAyahNumber(nextAyah);
+    setHighlightedAyah(nextAyah);
+    pendingNavigation.current = `${nextSurah}:${nextAyah}`;
+    setNavOpen(false);
+    updateLocation(nextSurah, nextAyah);
+    if (nextSurah === chapterNumber) {
+      window.requestAnimationFrame(() => document.getElementById(`ayah-${nextSurah}-${nextAyah}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    }
+  };
+  const toggleBookmark = (reference: number) => setBookmarks(current => current.includes(reference) ? current.filter(item => item !== reference) : [...current, reference]);
+  const ayahTextFor = (number: number) => {
+    const content = chapterContent[number];
+    const translation = content?.translations[selectedTranslation];
+    return { content, translation };
+  };
+  const copyAyah = async (number: number) => {
+    const { content, translation } = ayahTextFor(number);
+    const text = [content?.arabic, translation].filter(Boolean).join("\n");
+    if (!text) { setNotice("This Ayah has no text in the local mock dataset to copy."); return; }
+    try { await navigator.clipboard.writeText(text); setNotice(`${chapterNumber}:${number} copied.`); }
+    catch { setNotice("Clipboard access is unavailable in this browser."); }
+  };
+  const shareAyah = async (number: number) => {
+    const { content, translation } = ayahTextFor(number);
+    const text = [content?.arabic, translation, `${chapterNumber}:${number}`].filter(Boolean).join("\n");
+    if (!text) { setNotice("This Ayah has no text in the local mock dataset to share."); return; }
+    try {
+      if (navigator.share) await navigator.share({ title: `${chapterNumber}:${number} - ${transliteratedName}`, text });
+      else { await navigator.clipboard.writeText(text); setNotice("Ayah copied for sharing."); }
+    } catch { setNotice("Sharing was cancelled or is unavailable."); }
+  };
+  const audioTimingFor = (surah: number, ayah: number) => audioSources[surah]?.timings.find(segment => segment.ayahNumber === ayah);
+  const startAudio = (number?: number, targetSurah = chapterNumber) => {
+    const chapterAudio = audioSources[targetSurah];
+    const verseAudio = number ? ayahAudioSources[`${targetSurah}:${number}`] : undefined;
+    const timing = number ? audioTimingFor(targetSurah, number) : undefined;
+    const source = verseAudio?.source || chapterAudio?.source || "";
+    const targetAyah = number || 1;
+    setActiveAudioTitle(number ? `${surahData[targetSurah - 1][1]} · Ayah ${targetAyah}` : surahData[targetSurah - 1][1]);
+    setAudioUnavailable(!source);
+    setAudioProgress(0);
+    setAudioDuration(0);
+    setNotice("");
+    lastPlaybackAyah.current = targetAyah;
+    if (!source) {
+      audioRef.current?.pause();
+      if (audioRef.current) { audioRef.current.removeAttribute("src"); audioRef.current.load(); }
+      setAudioPlaying(false);
+      setNotice(number ? `Recitation audio for ${targetSurah}:${number} is not available locally.` : "Surah recitation audio is not available locally.");
+      return;
+    }
+    setSurahNumber(targetSurah);
+    setAyahNumber(targetAyah);
+    setHighlightedAyah(targetAyah);
+    pendingNavigation.current = `${targetSurah}:${targetAyah}`;
+    updateLocation(targetSurah, targetAyah, true);
+    const player = audioRef.current;
+    if (!player) { setNotice("The audio player is unavailable in this browser."); return; }
+    player.pause();
+    player.src = source;
+    player.volume = volume;
+    pendingAudioSeek.current = verseAudio ? 0 : number ? timing?.startTime ?? 0 : 0;
+    if (player.readyState >= 1) {
+      player.currentTime = pendingAudioSeek.current;
+      pendingAudioSeek.current = null;
+    }
+    player.load();
+    void player.play().catch(() => { setAudioPlaying(false); setNotice("The configured recitation could not be played."); });
+  };
+  const handleAudioTimeUpdate = (player: HTMLAudioElement) => {
+    setAudioProgress(player.currentTime);
+    if (Number.isFinite(player.duration)) setAudioDuration(player.duration);
+    const segment = audioSources[chapterNumber]?.timings.find(item => player.currentTime >= item.startTime && player.currentTime < item.endTime);
+    if (!segment || segment.ayahNumber === lastPlaybackAyah.current) return;
+    lastPlaybackAyah.current = segment.ayahNumber;
+    setAyahNumber(segment.ayahNumber);
+    setHighlightedAyah(segment.ayahNumber);
+    pendingNavigation.current = `${chapterNumber}:${segment.ayahNumber}`;
+    updateLocation(chapterNumber, segment.ayahNumber, true);
+  };
+  const audioSegments = Object.values(audioSources).flatMap(metadata => metadata.timings).sort((left, right) => left.surahNumber - right.surahNumber || left.ayahNumber - right.ayahNumber);
+  const currentAudioSegmentIndex = audioSegments.findIndex(segment => segment.surahNumber === chapterNumber && segment.ayahNumber === ayahNumber);
+  const moveAudioByAyah = (direction: -1 | 1) => {
+    const target = audioSegments[currentAudioSegmentIndex + direction];
+    if (target) startAudio(target.ayahNumber, target.surahNumber);
+  };
+  const seekAudio = (time: number) => {
+    const player = audioRef.current;
+    if (!player || !Number.isFinite(player.duration)) return;
+    player.currentTime = Math.min(player.duration, Math.max(0, time));
+    handleAudioTimeUpdate(player);
+  };
+  const selectJuz = (juz: number) => {
+    const start = juzStarts.find(item => item.juz === juz);
+    if (start) navigateToAyah(start.surah, start.ayah);
+  };
+  const selectPage = (page: number) => {
+    const start = mushafPageStarts.find(item => item.page === page);
+    if (start) navigateToAyah(start.surah, start.ayah);
+  };
+
+  return <main className="quran-reading-page">
+    <div className="quran-reader-top">
+      <button className="reader-current-surah" onClick={() => { setNavTab("Surah"); setNavOpen(true); }} aria-label="Open Surah navigation">{String(chapterNumber).padStart(2, "0")} · {transliteratedName}<span>⌄</span></button>
+      <div className="reader-location">{mappedPage ? `Page ${mappedPage}` : "Page mapping unavailable"}<i />Juz {activeJuz} / Hizb mapping unavailable</div>
+      <div className="reader-modes" role="group" aria-label="Reader mode"><button className={mode === "verses" ? "active" : ""} onClick={() => setMode("verses")}>Verse by Verse</button><button className={mode === "reading" ? "active" : ""} onClick={() => setMode("reading")}>Reading</button></div>
+    </div>
+    <div className="quran-reader-body">
+      <section className="quran-reader-content">
+        <div className="reader-toolbar-actions"><button className="reader-nav-open" onClick={() => { setNavTab("Surah"); setNavOpen(true); }}><Icon name="menu" size={17} /> Browse</button><button className="reader-translation-open" onClick={() => setTranslationOpen(true)}>Translation: {translationResources.find(item => item.languageCode === selectedTranslation)?.language}<span>⌄</span></button></div>
+        <section className="reader-chapter-card">
+          <strong className="reader-chapter-arabic" lang="ar" dir="rtl">{arabicName}</strong>
+          <div className="reader-chapter-copy"><span>Surah {chapterNumber}</span><h1>{transliteratedName} <em>{surahMeanings[chapterNumber - 1]}</em></h1><p>{revelation} • {ayahCount} Ayat • Local reader mock data</p></div>
+          <div className="reader-chapter-actions"><button onClick={() => startAudio()}><Icon name="play" size={15} /> Listen</button><button onClick={() => setInfoOpen(open => !open)}><span aria-hidden="true">ⓘ</span> Info</button><button className="translation-desktop" onClick={() => setTranslationOpen(true)}>Translation: {translationResources.find(item => item.languageCode === selectedTranslation)?.name} <span>⌄</span></button></div>
+        </section>
+        {infoOpen && <div className="reader-info-panel"><b>About this Surah</b><span>Chapter {chapterNumber} in canonical order</span><span>{revelation} revelation • {ayahCount} Ayat</span><span>English meaning: {surahMeanings[chapterNumber - 1]}</span></div>}
+        <div className="reader-data-note" role="note"><Icon name="book" size={16} /><p>Ayah numbering follows chapter metadata. Local text is available only for 1:1; other slots are intentionally left without Quran text or translation.</p></div>
+        <div className={`reader-ayah-list ${mode === "reading" ? "reading-mode" : "verse-mode"}`}>
+          {Array.from({ length: ayahCount }, (_, index) => {
+            const number = index + 1;
+            const reference = chapterNumber * 1000 + number;
+            const { content, translation } = ayahTextFor(number);
+            const resource = translationResources.find(item => item.languageCode === selectedTranslation);
+            const isBookmarked = bookmarks.includes(reference);
+            return <article id={`ayah-${chapterNumber}-${number}`} key={`${chapterNumber}:${number}`} className={`reader-ayah ${highlightedAyah === number ? "is-highlighted" : ""} ${!content ? "content-unavailable" : ""}`}>
+              <div className="reader-ayah-actions"><div><span className="ayah-reference">{chapterNumber}:{number}</span><button aria-label={`Play Ayah ${chapterNumber}:${number}`} onClick={() => startAudio(number)}>{audioPlaying && ayahNumber === number ? <span>Ⅱ</span> : <Icon name="play" size={17} />}</button><button aria-label={`${isBookmarked ? "Remove bookmark from" : "Bookmark"} Ayah ${chapterNumber}:${number}`} className={isBookmarked ? "bookmarked" : ""} onClick={() => toggleBookmark(reference)}><Icon name="heart" size={17} /></button></div><div><button aria-label={`Copy Ayah ${chapterNumber}:${number}`} onClick={() => void copyAyah(number)}><Icon name="copy" size={17} /></button><button aria-label={`Share Ayah ${chapterNumber}:${number}`} onClick={() => void shareAyah(number)}><Icon name="share" size={17} /></button></div></div>
+              {content?.arabic ? <p className="reader-arabic" lang="ar" dir="rtl" translate="no">{content.arabic}</p> : <p className="ayah-unavailable">Quran text unavailable in the local mock data.</p>}
+              {translation ? <p className={`reader-translation-text language-${selectedTranslation}`} lang={selectedTranslation} dir={selectedTranslation === "ur" ? "rtl" : "ltr"}>{translation}</p> : <p className="translation-unavailable">{content ? `No ${resource?.language || "selected language"} translation is available for this Ayah.` : "Translation unavailable for this Ayah in the local mock data."}</p>}
+              {content && <small className="content-attribution">Existing prototype sample • translation attribution not recorded</small>}
+            </article>;
+          })}
+        </div>
+        <nav className="reader-surah-pager" aria-label="Surah navigation"><button disabled={chapterNumber === 1} onClick={() => selectSurah(chapterNumber - 1)}>← Previous Surah</button><button onClick={() => { setNavTab("Surah"); setNavOpen(true); }}>All Surahs</button><button disabled={chapterNumber === surahData.length} onClick={() => selectSurah(chapterNumber + 1)}>Next Surah →</button></nav>
+      </section>
+    </div>
+    {notice && <div className="reader-notice" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={() => setNotice("")}><Icon name="x" size={15} /></button></div>}
+
+    {navOpen && <div className="quran-drawer-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setNavOpen(false); }}><aside className="quran-drawer quran-nav-drawer" role="dialog" aria-modal="true" aria-label="Quran navigation">
+      <div className="drawer-heading"><div><small>QURAN NAVIGATION</small><h2>{String(chapterNumber).padStart(2, "0")} · {transliteratedName}</h2></div><button aria-label="Close navigation" onClick={() => setNavOpen(false)}><Icon name="x" /></button></div>
+      <div className="drawer-tabs" role="tablist" aria-label="Navigate by"><button role="tab" aria-selected={navTab === "Surah"} className={navTab === "Surah" ? "active" : ""} onClick={() => setNavTab("Surah")}>Surah</button><button role="tab" aria-selected={navTab === "Verse"} className={navTab === "Verse" ? "active" : ""} onClick={() => setNavTab("Verse")}>Verse</button><button role="tab" aria-selected={navTab === "Juz"} className={navTab === "Juz" ? "active" : ""} onClick={() => setNavTab("Juz")}>Juz</button><button role="tab" aria-selected={navTab === "Page"} className={navTab === "Page" ? "active" : ""} onClick={() => setNavTab("Page")}>Page</button></div>
+      {navTab === "Surah" && <><label className="drawer-search"><Icon name="search" size={17} /><input autoFocus value={surahSearch} onChange={event => setSurahSearch(event.target.value)} placeholder="Search Surah" /></label><div className="surah-drawer-list">{filteredSurahs.map(({ item, number }) => <button key={number} className={chapterNumber === number ? "selected" : ""} onClick={() => selectSurah(number)}><span>{number}</span><b>{item[1]}</b><small>{surahMeanings[number - 1]}</small><strong lang="ar" dir="rtl">{item[0]}</strong></button>)}{!filteredSurahs.length && <p className="drawer-empty">No Surahs match that search.</p>}</div></>}
+      {navTab === "Verse" && <div className="verse-navigation">
+        <section className="verse-surah-column" aria-label="Select Surah">
+          <label className="drawer-search"><Icon name="search" size={17} /><input autoFocus value={surahSearch} onChange={event => setSurahSearch(event.target.value)} placeholder="Search Surah" /></label>
+          <div className="verse-surah-list">{filteredSurahs.map(({ item, number }) => <button key={number} className={chapterNumber === number ? "selected" : ""} aria-current={chapterNumber === number ? "true" : undefined} onClick={() => selectVerseSurah(number)}><span>{number}</span><b>{item[1]}</b></button>)}{!filteredSurahs.length && <p className="drawer-empty">No Surahs match that search.</p>}</div>
+        </section>
+        <section className="verse-ayah-column" aria-label={`Ayat in ${transliteratedName}`}>
+          <h3>Ayah <small>{chapterNumber}. {transliteratedName}</small></h3>
+          <div className="verse-ayah-list">{Array.from({ length: ayahCount }, (_, index) => index + 1).map(number => <button key={`${chapterNumber}:${number}`} className={ayahNumber === number ? "selected" : ""} aria-current={ayahNumber === number ? "true" : undefined} onClick={() => navigateToAyah(chapterNumber, number)}>{number}</button>)}</div>
+        </section>
+      </div>}
+      {navTab === "Juz" && <><p className="drawer-description">Select a Juz to navigate to its listed starting Ayah.</p><div className="juz-drawer-list">{juzStarts.map(start => <button key={start.juz} onClick={() => selectJuz(start.juz)} className={activeJuz === start.juz ? "selected" : ""}><span>Juz {start.juz}</span><small>Starts at {start.surah}:{start.ayah} · {surahData[start.surah - 1][1]}</small><Icon name="chevron" size={16} /></button>)}</div></>}
+      {navTab === "Page" && <div className="page-navigation"><h3>Madani Mushaf sample mapping</h3><p>Only two local page-start mappings are included. This is not a complete page index.</p>{mushafPageStarts.map(start => <button key={start.page} className={mappedPage === start.page ? "selected" : ""} onClick={() => selectPage(start.page)}><span>Page {start.page}</span><small>Starts at {start.surah}:{start.ayah} · {surahData[start.surah - 1][1]}</small><Icon name="chevron" size={16} /></button>)}</div>}
+    </aside></div>}
+
+    {translationOpen && <div className="quran-drawer-backdrop translation-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setTranslationOpen(false); }}><aside className="quran-drawer translation-drawer" role="dialog" aria-modal="true" aria-label="Translations"><div className="drawer-heading"><div><small>DISPLAY SETTINGS</small><h2>Translations</h2></div><button aria-label="Close translations" onClick={() => setTranslationOpen(false)}><Icon name="x" /></button></div><label className="drawer-search"><Icon name="search" size={17} /><input autoFocus value={translationSearch} onChange={event => setTranslationSearch(event.target.value)} placeholder="Search translations" /></label><div className="translation-options">{[...new Set(filteredTranslations.map(resource => resource.language))].map(language => <section key={language}><h3>{language}</h3>{filteredTranslations.filter(resource => resource.language === language).map(resource => <label key={resource.id} className={`translation-option ${selectedTranslation === resource.languageCode ? "selected" : ""}`}><input type="radio" name="translation" checked={selectedTranslation === resource.languageCode} onChange={() => setSelectedTranslation(resource.languageCode)} /><span><b>{resource.name}</b><small>{resource.attribution}</small></span><span className="translation-check">{selectedTranslation === resource.languageCode ? "Selected" : ""}</span></label>)}</section>)}{!filteredTranslations.length && <p className="drawer-empty">No translations match that search.</p>}</div><button className="drawer-done" onClick={() => setTranslationOpen(false)}>Done</button></aside></div>}
+
+    <audio
+      ref={audioRef}
+      preload="none"
+      onPlay={() => setAudioPlaying(true)}
+      onPause={() => setAudioPlaying(false)}
+      onLoadedMetadata={event => {
+        const player = event.currentTarget;
+        setAudioDuration(Number.isFinite(player.duration) ? player.duration : 0);
+        if (pendingAudioSeek.current !== null) {
+          player.currentTime = pendingAudioSeek.current;
+          pendingAudioSeek.current = null;
+        }
+      }}
+      onTimeUpdate={event => handleAudioTimeUpdate(event.currentTarget)}
+      onEnded={() => setAudioPlaying(false)}
+      onError={() => {
+        setAudioPlaying(false);
+        setAudioUnavailable(true);
+        setNotice("The configured recitation could not be loaded.");
+      }}
+    />
+    {activeAudioTitle && <div className="quran-bottom-player" aria-label="Quran audio player">
+      <div className="quran-player-track"><b>{activeAudioTitle}</b><small>{audioUnavailable ? "Audio unavailable · no playable source configured" : audioSources[chapterNumber]?.reciter || ayahAudioSources[`${chapterNumber}:${ayahNumber}`]?.reciter || "Quran recitation"}</small></div>
+      <button aria-label="Previous Ayah" title="Previous Ayah" disabled={audioUnavailable || currentAudioSegmentIndex <= 0} onClick={() => moveAudioByAyah(-1)}>‹</button>
+      <button aria-label={audioPlaying ? "Pause recitation" : "Play recitation"} disabled={audioUnavailable} onClick={() => {
+        const player = audioRef.current;
+        if (!player) return;
+        if (audioPlaying) player.pause();
+        else void player.play().catch(() => setNotice("The configured recitation could not be played."));
+      }}>{audioPlaying ? "Ⅱ" : <Icon name="play" />}</button>
+      <button aria-label="Next Ayah" title="Next Ayah" disabled={audioUnavailable || currentAudioSegmentIndex < 0 || currentAudioSegmentIndex >= audioSegments.length - 1} onClick={() => moveAudioByAyah(1)}>›</button>
+      <input type="range" min="0" max={audioDuration} value={Math.min(audioProgress, audioDuration)} disabled={audioUnavailable || !audioDuration} onChange={event => seekAudio(Number(event.target.value))} aria-label="Recitation progress" />
+      <span className="quran-player-time">{`${Math.floor(audioProgress / 60)}:${String(Math.floor(audioProgress % 60)).padStart(2, "0")}`} / {audioDuration ? `${Math.floor(audioDuration / 60)}:${String(Math.floor(audioDuration % 60)).padStart(2, "0")}` : "--:--"}</span>
+      <label className="quran-player-volume" title="Volume"><Icon name="volume" size={17} /><input type="range" min="0" max="1" step="0.05" value={volume} disabled={audioUnavailable} onChange={event => { const nextVolume = Number(event.target.value); setVolume(nextVolume); if (audioRef.current) audioRef.current.volume = nextVolume; }} aria-label="Volume" /></label>
+      <button aria-label="Close player" onClick={stopAudio}>×</button>
+    </div>}
+  </main>;
 }
 
 function ParaPage({ go }: { go: (r: Route) => void }) {
@@ -356,9 +677,18 @@ function Footer({ go }: { go: (r: Route) => void }) {
 }
 
 export default function App() {
-  const initial = window.location.hash.slice(1) || "home";
+  const initial = window.location.hash.slice(1).split("?")[0] || "home";
   const [route, setRoute] = useState<Route>(initial);
-  const go = (r: Route) => { setRoute(r); window.location.hash = r; window.scrollTo({ top: 0, behavior: "smooth" }) };
+  useEffect(() => {
+    const syncRoute = () => setRoute(window.location.hash.slice(1).split("?")[0] || "home");
+    window.addEventListener("popstate", syncRoute);
+    window.addEventListener("hashchange", syncRoute);
+    return () => {
+      window.removeEventListener("popstate", syncRoute);
+      window.removeEventListener("hashchange", syncRoute);
+    };
+  }, []);
+  const go = (r: Route) => { setRoute(r.split("?")[0]); window.location.hash = r; window.scrollTo({ top: 0, behavior: "smooth" }) };
   const page = useMemo(() => {
     switch (route) {
       case "lyrics": return <LyricsPage go={go} />;
