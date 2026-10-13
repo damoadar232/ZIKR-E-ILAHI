@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { audioSources, ayahAudioSources, ayahContent, juzStarts, mushafPageStarts, surahMeanings, translationResources, type TranslationLanguage } from "./quranData";
+import { artists, lyricBooks, lyricCategories, lyricSubjects, lyrics as lyricLibrary, poets, getPublishedLyrics, filterLyricsByTitle, findLyricById } from "./lyricsData";
 
 type Route = string;
 type IconName =
@@ -14,15 +15,6 @@ const photos = {
 };
 const heroVideo = "/videos/zikr-e-ilahi-hero.mp4";
 
-const lyrics = [
-  { title: "Mustafa Jaan-e", artist: "Owais Raza Qadri", writer: "Imam Ahmed Raza Khan", category: "Durood-o-Salam", language: "Urdu", date: "12 May 2025", image: "https://images.unsplash.com/photo-1512632578888-169bbbc64f33?auto=format&fit=crop&w=1200&q=82" },
-  { title: "Karam Mangta Hoon", artist: "Owais Raza Qadri", writer: "Muzaffar Warsi", category: "Naat Sharif", language: "Urdu", date: "08 May 2025", image: "https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1200&q=82" },
-  { title: "Main So Jaun ", artist: "Zohaib Ashrafi", writer: "Traditional", category: "Naat Sharif", language: "Urdu", date: "02 May 2025", image: "https://images.unsplash.com/photo-1567712595315-545da0d341b2?auto=format&fit=crop&w=1200&q=82" },
-  { title: "Kabe Ki Ronaq", artist: "Owais Raza Qadri", writer: "Traditional", category: "Hamd", language: "Hindi", date: "28 Apr 2025", image: "https://images.unsplash.com/photo-1596612265825-f7d7506ae4ad?auto=format&fit=crop&w=1200&q=82" },
-  { title: "Mere Aaqa Aao", artist: "Zohaib Ashrafi", writer: "Pir Nasiruddin Nasir", category: "Naat Sharif", language: "Urdu", date: "20 Apr 2025", image: "https://images.unsplash.com/photo-1554110838-816383ce7956?auto=format&fit=crop&w=1200&q=82" },
-  { title: "Allah Hu Allah Hu", artist: "Traditional", writer: "Traditional", category: "Sufi Kalam", language: "Persian", date: "14 Apr 2025", image: "https://images.unsplash.com/photo-1533082385145-b152cdde7ccd?auto=format&fit=crop&w=1200&q=82" },
-];
-
 const audio = [
   { title: "Karam Mangta Hoon", artist: "Owais Raza Qadri", category: "Naat", duration: "06:24", date: "08 May 2025", color: "green", image: "https://images.unsplash.com/photo-1778754607042-5fc1e79b300f?auto=format&fit=crop&w=900&q=80" },
   { title: "Mustafa Jaan-e-Rehmat", artist: "Zohaib Ashrafi", category: "Durood-o-Salam", duration: "08:42", date: "04 May 2025", color: "gold", image: "https://images.unsplash.com/photo-1537181534458-45dcee76ae90?auto=format&fit=crop&w=900&q=80" },
@@ -35,6 +27,16 @@ const books = [
   { title: "Durood & Salam", author: "Compiled Edition", category: "Durood-o-Salam", date: "24 Apr 2025", downloadable: false, color: "navy" },
   { title: "Prayers for Every Day", author: "Editorial Collection", category: "Dua Books", date: "16 Apr 2025", downloadable: true, color: "sand" },
 ];
+
+const lyricsBrowseItems = [
+  ["All Lyrics", "lyrics"],
+  ["Categories", "lyrics-category"],
+  ["Naat-Khwaan", "lyrics-artists"],
+  ["Poets / Writers", "lyrics-poets"],
+  ["Books", "lyrics-books"],
+  ["Language", "lyrics-languages"],
+  ["Subject / Occasion", "lyrics-subjects"],
+] as const;
 
 const surahData = [
   ["الفاتحة", "Al-Fatihah", 7, "Makki"], ["البقرة", "Al-Baqarah", 286, "Madani"], ["آل عمران", "Ali 'Imran", 200, "Madani"], ["النساء", "An-Nisa", 176, "Madani"], ["المائدة", "Al-Ma'idah", 120, "Madani"], ["الأنعام", "Al-An'am", 165, "Makki"], ["الأعراف", "Al-A'raf", 206, "Makki"], ["الأنفال", "Al-Anfal", 75, "Madani"], ["التوبة", "At-Tawbah", 129, "Madani"], ["يونس", "Yunus", 109, "Makki"], ["هود", "Hud", 123, "Makki"], ["يوسف", "Yusuf", 111, "Makki"],
@@ -49,6 +51,48 @@ const surahData = [
   ["الكافرون", "Al-Kafirun", 6, "Makki"], ["النصر", "An-Nasr", 3, "Madani"], ["المسد", "Al-Masad", 5, "Makki"], ["الإخلاص", "Al-Ikhlas", 4, "Makki"], ["الفلق", "Al-Falaq", 5, "Makki"], ["الناس", "An-Nas", 6, "Makki"],
 ] as const;
 const surahs = surahData.map((surah, index) => [String(index + 1).padStart(2, "0"), surah[0], surah[1], `${surah[2]} Ayat`, surah[3]]);
+
+function getRouteQueryParam(name) {
+  const params = new URLSearchParams(window.location.hash.split("?")[1] || "");
+  return params.get(name) || "";
+}
+
+function getTitleFirstLetter(title) {
+  const match = (title || "").match(/[A-Za-z0-9]/);
+  if (!match) return "";
+  const first = match[0];
+  return /\d/.test(first) ? "0-9" : first.toUpperCase();
+}
+
+function getLyricCategoryNames(item) {
+  return (item.categoryIds || []).map((categoryId) => lyricCategories.find((category) => category.id === categoryId)?.name || categoryId).filter(Boolean);
+}
+
+function getLyricArtistName(item) {
+  return artists.find((artist) => artist.id === item.artistId)?.name || item.artist || "Unknown artist";
+}
+
+function getLyricWriterName(item) {
+  return poets.find((poet) => poet.id === item.writerId)?.name || item.writer || "Unknown writer";
+}
+
+function getLyricBookName(item) {
+  return item.bookId ? lyricBooks.find((book) => book.id === item.bookId)?.title || "" : "";
+}
+
+function formatLyricDate(date) {
+  if (!date) return "Recently published";
+  return new Date(date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function getPrimaryLanguage(item) {
+  const preferred = item.languageVersions?.[0];
+  return preferred ? preferred.label : "Urdu";
+}
+
+function getLetterOptions() {
+  return ["All", "0-9", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")];
+}
 
 function useReveal<T extends HTMLElement>(delay = 0) {
   const ref = useRef<T>(null);
@@ -160,6 +204,39 @@ function SearchBox({ value, setValue, placeholder = "Search by title, artist, wr
   return <label className="search-box"><Icon name="search" /><input value={value} onChange={e => setValue(e.target.value)} placeholder={placeholder} aria-label={placeholder} />{value && <button onClick={() => setValue("")} aria-label="Clear search"><Icon name="x" size={16} /></button>}</label>;
 }
 
+function LyricsBrowseControl({ go, active = "lyrics" }: { go: (r: Route) => void; active?: string }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return <div className="lyrics-browse-wrap" ref={menuRef}>
+    <button type="button" className="lyrics-browse-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+      Browse <Icon name="chevron" size={14} />
+    </button>
+    {open && <div className="lyrics-browse-menu" role="menu" aria-label="Lyrics browse destinations">
+      {lyricsBrowseItems.map(([label, route]) => <button key={route} type="button" role="menuitem" className={active === route ? "active" : ""} onClick={() => { go(route); setOpen(false); }}>{label}</button>)}
+    </div>}
+  </div>;
+}
+
 function Home({ go }: { go: (r: Route) => void }) {
   const heroRef = useReveal<HTMLDivElement>();
   const servicePreviewRef = useRef<HTMLElement>(null);
@@ -202,7 +279,7 @@ function Home({ go }: { go: (r: Route) => void }) {
       <div className="hero-pattern" /><div ref={heroRef} className="container hero-content reveal"><span className="eyebrow">A SANCTUARY FOR THE HEART</span><h1>Find Peace in<br /><em>Remembrance</em> of Allah</h1><p>Explore beautiful Naats, Quranic verses, devotional audio, and Islamic literature in one peaceful place.</p><div className="button-row"><Btn onClick={() => go("lyrics")} icon="arrow">Explore Devotional Content</Btn><Btn onClick={() => go("quran")} variant="ghost">Read the Quran</Btn></div><div className="hero-note"><span>ٱذْكُرُوا ٱللَّهَ</span><i />Remember Allah often</div></div>
     </section>
     <section className="quick container"><div className="feature-grid">{features.map(([icon, title, text, path], i) => <Reveal className="card-reveal" delay={i * 80} key={title}><button className="feature-card" onClick={() => go(path)}><span className="feature-icon"><Icon name={icon} /></span><span><b>{title}</b><small>{text}</small></span><Icon name="arrow" size={18} /></button></Reveal>)}</div></section>
-    <section className="section container"><SectionHead eyebrow="Newly Added" title="Latest Lyrics" body="Words of devotion, carefully presented for reflection and recitation." action="View All Lyrics" onAction={() => go("lyrics")} /><div className="lyrics-grid">{lyrics.slice(0, 4).map((x, i) => <LyricsCard item={x} key={x.title} index={i} onClick={() => go("lyric-detail")} />)}</div></section>
+    <section className="section container"><SectionHead eyebrow="Newly Added" title="Latest Lyrics" body="Words of devotion, carefully presented for reflection and recitation." action="View All Lyrics" onAction={() => go("lyrics")} /><div className="lyrics-grid">{getPublishedLyrics(lyricLibrary).slice(0, 4).map((x, i) => <LyricsCard item={x} key={x.id} index={i} onClick={() => go(`lyric-detail?id=${x.id}`)} />)}</div></section>
     <section className="quran-feature"><Reveal className="container quran-feature-inner"><div className="calligraphy"><span>القرآن</span><small>THE HOLY QURAN</small></div><div><span className="eyebrow">READ • REFLECT • UNDERSTAND</span><h2>Reconnect Through<br />the Holy Quran</h2><p>Browse all Surahs and Paras with a serene reading experience and carefully presented translations.</p><div className="mini-links">{["Surah", "Para", "Quranic Topics", "Quranic Quotes"].map(x => <button onClick={() => go(x === "Para" ? "para" : x === "Surah" ? "surahs" : "quran-topics")} key={x}>{x}<Icon name="chevron" size={14} /></button>)}</div><Btn onClick={() => go("quran")} icon="arrow">Explore Quran</Btn></div></Reveal></section>
     <section className="section dark-section"><div className="container"><SectionHead eyebrow="Listen & Reflect" title="Latest Devotional Audio" body="Soulful recitations and timeless words of devotion." action="View All Audio" onAction={() => go("audio")} /><div className="audio-grid">{audio.map((x, i) => <AudioCard key={x.title} item={x} index={i} onClick={() => go("audio-detail")} />)}</div></div></section>
     <section className="section container"><SectionHead eyebrow="Knowledge for the Soul" title="Featured E-Books" body="Discover a curated library of Islamic literature." action="Explore E-Books" onAction={() => go("ebooks")} /><div className="book-grid">{books.map((x, i) => <BookCard item={x} key={x.title} index={i} onClick={() => go("book-detail")} />)}</div></section>
@@ -211,9 +288,15 @@ function Home({ go }: { go: (r: Route) => void }) {
   </main>;
 }
 
-function LyricsCard({ item, index, onClick }: { item: typeof lyrics[0]; index: number; onClick: () => void }) {
+function LyricsCard({ item, index, onClick }: { item: (typeof lyricLibrary)[number]; index: number; onClick: () => void }) {
   const ref = useReveal<HTMLElement>((index % 4) * 85);
-  return <article ref={ref} className="lyric-card editorial-lyric reveal" onClick={onClick} tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } }}><img src={item.image} alt="" loading="lazy" /><span className="lyric-overlay" /><div className="lyric-content"><div className="lyric-top"><span className="editorial-label">{item.category} • {item.language}</span><span>{item.date}</span></div><div className="lyric-bottom"><h3>{item.title}</h3><p>Recited by <b>{item.artist}</b></p><small>Written by {item.writer}</small><button className="editorial-action" aria-label={`Read ${item.title}`}>Read Lyrics <Icon name="arrow" /></button></div></div></article>;
+  const artistName = getLyricArtistName(item);
+  const writerName = getLyricWriterName(item);
+  const categoryLabel = getLyricCategoryNames(item).join(" • ") || "Devotional";
+  const languageLabel = getPrimaryLanguage(item);
+  const itemDate = formatLyricDate(item.createdAt);
+
+  return <article ref={ref} className="lyric-card editorial-lyric reveal" onClick={onClick} tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } }}><img src={item.image} alt="" loading="lazy" /><span className="lyric-overlay" /><div className="lyric-content"><div className="lyric-top"><span className="editorial-label">{categoryLabel} • {languageLabel}</span><span>{itemDate}</span></div><div className="lyric-bottom"><h3>{item.title}</h3><p>Recited by <b>{artistName}</b></p><small>Written by {writerName}</small><button className="editorial-action" aria-label={`Read ${item.title}`}>Read Lyrics <Icon name="arrow" /></button></div></div></article>;
 }
 
 function AudioCard({ item, index, onClick }: { item: typeof audio[0]; index: number; onClick: () => void }) {
@@ -231,19 +314,153 @@ function DirectoryHeader({ go, title, text }: { go: (r: Route) => void; title: s
   return <><div className="cream-top"><div className="container"><Breadcrumbs items={[title]} go={go} /><span className="eyebrow">ZIKR-E-ILAHI LIBRARY</span><h1>{title}</h1><p>{text}</p></div></div></>;
 }
 
+function LyricsSubNav({ go, active }: { go: (r: Route) => void; active: string }) {
+  const items = [
+    ["All Lyrics", "lyrics"],
+    ["Categories", "lyrics-category"],
+    ["Naat-Khwaan", "lyrics-artists"],
+    ["Poets", "lyrics-poets"],
+    ["Books", "lyrics-books"],
+    ["Language", "lyrics-languages"],
+    ["Subject / Occasion", "lyrics-subjects"],
+  ] as const;
+
+  return <div className="lyrics-subnav"><div className="container"><nav aria-label="Lyrics browsing navigation">{items.map(([label, route]) => <button key={route} className={active === route ? "active" : ""} onClick={() => go(route)}>{label}</button>)}</nav></div></div>;
+}
+
+function renderLyricCards(items, go, onClickRoute = "lyric-detail") {
+  return <div className="lyrics-list">{items.map((item, index) => <LyricsCard item={item} index={index} key={item.id} onClick={() => go(`${onClickRoute}?id=${item.id}`)} />)}</div>;
+}
+
 function LyricsPage({ go }: { go: (r: Route) => void }) {
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState("All Lyrics");
   const [letter, setLetter] = useState("All");
-  const tabs = ["All Lyrics", "Categories", "Naatkhawan", "Writers / Poets", "Language", "Books", "Subject / Occasion", "Collections", "Request Lyrics"];
-  const filtered = lyrics.filter(x => (!search || `${x.title} ${x.artist} ${x.writer}`.toLowerCase().includes(search.toLowerCase())) && (letter === "All" || (letter === "0" ? /^\d/.test(x.title) : x.title.startsWith(letter))));
-  return <main><DirectoryHeader go={go} title="Devotional Lyrics" text="Discover words of praise and devotion across languages, traditions, and beloved voices." /><div className="container directory-controls"><SearchBox value={search} setValue={setSearch} /><Tabs items={tabs} active={tab} setActive={setTab} /><div className="alphabet"><button className={letter === "All" ? "active" : ""} onClick={() => setLetter("All")}>All</button><button onClick={() => setLetter("0")}>0–9</button>{"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(x => <button className={letter === x ? "active" : ""} key={x} onClick={() => setLetter(x)}>{x}</button>)}</div></div><section className="section container"><SectionHead eyebrow={`${filtered.length} works`} title={tab === "All Lyrics" ? "Recently Published" : tab} />{filtered.length ? <div className="lyrics-list">{filtered.map((x, i) => <LyricsCard item={x} index={i} key={x.title} onClick={() => go("lyric-detail")} />)}</div> : <div className="empty"><Icon name="search" size={32} /><h3>No lyrics found</h3><p>Try a different search term or letter.</p></div>}<div className="pagination"><button className="active">1</button><button>2</button><button>3</button><button><Icon name="arrow" size={16} /></button></div></section></main>;
+  const filtered = filterLyricsByTitle(getPublishedLyrics(lyricLibrary), search, letter);
+
+  return <main><DirectoryHeader go={go} title="Devotional Lyrics" text="Discover words of praise and devotion across languages, traditions, and beloved voices." /><div className="container directory-controls"><div className="lyrics-search-row"><SearchBox value={search} setValue={setSearch} placeholder="Search lyric titles" /><LyricsBrowseControl go={go} active="lyrics" /></div><div className="alphabet" aria-label="Title filter by first letter"><button className={letter === "All" ? "active" : ""} onClick={() => setLetter("All")}>All</button>{getLetterOptions().slice(1).map((option) => <button key={option} className={letter === option ? "active" : ""} onClick={() => setLetter(option)}>{option === "0-9" ? "0–9" : option}</button>)}</div></div><section className="section container"><SectionHead eyebrow={`${filtered.length} works`} title="Recently Published" />{filtered.length ? renderLyricCards(filtered, go) : <div className="empty"><Icon name="search" size={32} /><h3>No lyrics match that title filter.</h3><p>Try a different title search or reset the letter selection.</p><button className="btn btn-primary" onClick={() => { setSearch(""); setLetter("All"); }}>Clear filters</button></div>}</section></main>;
+}
+
+function LyricsDirectoryPage({ go, title, description, heading, items, activeRoute, emptyMessage, resourceName }: { go: (r: Route) => void; title: string; description: string; heading: string; items: any[]; activeRoute: string; emptyMessage: string; resourceName: string }) {
+  return <main><DirectoryHeader go={go} title={title} text={description} /><LyricsSubNav go={go} active={activeRoute} /><section className="section container"><SectionHead eyebrow={`${items.length} ${resourceName}`} title={heading} />{items.length ? renderLyricCards(items, go) : <div className="empty"><Icon name="book" size={32} /><h3>{emptyMessage}</h3><p>Try another library category to continue browsing.</p></div>}</section></main>;
+}
+
+function LyricsCategoryPage({ go }: { go: (r: Route) => void }) {
+  const slug = getRouteQueryParam("category");
+  const categoryOptions = lyricCategories.map((entry) => ({ ...entry, count: getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.categoryIds.includes(entry.id)).length }));
+  const category = categoryOptions.find((entry) => entry.id === slug) || categoryOptions[0];
+  const items = category ? getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.categoryIds.includes(category.id)) : [];
+
+  return <main><DirectoryHeader go={go} title="Categories" text="Browse devotional compositions by their form and tradition." /><LyricsSubNav go={go} active="lyrics-category" /><section className="section container"><div className="library-directory-grid">{categoryOptions.map((entry) => <button key={entry.id} className={category?.id === entry.id ? "active" : ""} onClick={() => go(`lyrics-category?category=${entry.id}`)}><span>{entry.name}</span><small>{entry.count} titles</small></button>)}</div></section><section className="section container"><SectionHead eyebrow={`${items.length} titles`} title={category ? `${category.name} lyrics` : "Category library"} />{items.length ? renderLyricCards(items, go) : <div className="empty"><Icon name="book" size={32} /><h3>No lyrics are currently published in this category.</h3></div>}</section></main>;
+}
+
+function LyricsArtistPage({ go }: { go: (r: Route) => void }) {
+  const slug = getRouteQueryParam("artist");
+  const artistOptions = artists.map((entry) => ({ ...entry, count: getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.artistId === entry.id).length }));
+  const artist = artistOptions.find((entry) => entry.id === slug) || artistOptions[0];
+  const items = artist ? getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.artistId === artist.id) : [];
+
+  return <main><DirectoryHeader go={go} title="Naat-Khwaan / Reciters" text="Explore lyrics by the voice that recites them." /><LyricsSubNav go={go} active="lyrics-artists" /><section className="section container"><div className="library-directory-grid">{artistOptions.map((entry) => <button key={entry.id} className={artist?.id === entry.id ? "active" : ""} onClick={() => go(`lyrics-artists?artist=${entry.id}`)}><span>{entry.name}</span><small>{entry.count} titles</small></button>)}</div></section><section className="section container"><SectionHead eyebrow={`${items.length} titles`} title={artist ? `${artist.name} recordings` : "Artist directory"} />{items.length ? renderLyricCards(items, go) : <div className="empty"><Icon name="book" size={32} /><h3>This reciter is not currently linked to any published lyrics.</h3></div>}</section></main>;
+}
+
+function LyricsPoetPage({ go }: { go: (r: Route) => void }) {
+  const slug = getRouteQueryParam("poet");
+  const poetOptions = poets.map((entry) => ({ ...entry, count: getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.writerId === entry.id).length }));
+  const poet = poetOptions.find((entry) => entry.id === slug) || poetOptions[0];
+  const items = poet ? getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.writerId === poet.id) : [];
+
+  return <main><DirectoryHeader go={go} title="Poets / Writers" text="Browse lyrics by the writer credited with the composition." /><LyricsSubNav go={go} active="lyrics-poets" /><section className="section container"><div className="library-directory-grid">{poetOptions.map((entry) => <button key={entry.id} className={poet?.id === entry.id ? "active" : ""} onClick={() => go(`lyrics-poets?poet=${entry.id}`)}><span>{entry.name}</span><small>{entry.count} titles</small></button>)}</div></section><section className="section container"><SectionHead eyebrow={`${items.length} titles`} title={poet ? `${poet.name} compositions` : "Poet directory"} />{items.length ? renderLyricCards(items, go) : <div className="empty"><Icon name="book" size={32} /><h3>No published lyrics are currently attributed to this writer.</h3></div>}</section></main>;
+}
+
+function LyricsBookPage({ go }: { go: (r: Route) => void }) {
+  const slug = getRouteQueryParam("book");
+  const bookOptions = lyricBooks.map((entry) => ({ ...entry, count: getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.bookId === entry.id).length }));
+  const book = bookOptions.find((entry) => entry.id === slug) || bookOptions[0];
+  const items = book ? getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.bookId === book.id) : [];
+
+  return <main><DirectoryHeader go={go} title="Books" text="Browse lyrics linked to a source collection or devotional anthology." /><LyricsSubNav go={go} active="lyrics-books" /><section className="section container"><div className="library-directory-grid">{bookOptions.map((entry) => <button key={entry.id} className={book?.id === entry.id ? "active" : ""} onClick={() => go(`lyrics-books?book=${entry.id}`)}><span>{entry.title}</span><small>{entry.count} titles</small></button>)}</div></section><section className="section container"><SectionHead eyebrow={`${items.length} titles`} title={book ? `${book.title}` : "Book library"} />{items.length ? renderLyricCards(items, go) : <div className="empty"><Icon name="book" size={32} /><h3>No published lyrics are currently linked to this book.</h3></div>}</section></main>;
+}
+
+function LyricsLanguagePage({ go }: { go: (r: Route) => void }) {
+  const slug = getRouteQueryParam("language") || "ur";
+  const languageOptions = Array.from(new Set(getPublishedLyrics(lyricLibrary).flatMap((lyric) => lyric.languageVersions.map((version) => version.code)))).map((code) => ({ code, count: getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.languageVersions.some((version) => version.code === code)).length }));
+  const language = languageOptions.find((entry) => entry.code === slug) || languageOptions[0];
+  const items = language ? getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.languageVersions.some((version) => version.code === language.code)) : [];
+
+  return <main><DirectoryHeader go={go} title="Language" text="Find lyrics by the language version available in the library." /><LyricsSubNav go={go} active="lyrics-languages" /><section className="section container"><div className="library-directory-grid">{languageOptions.map((entry) => <button key={entry.code} className={language?.code === entry.code ? "active" : ""} onClick={() => go(`lyrics-languages?language=${entry.code}`)}><span>{entry.code.toUpperCase()}</span><small>{entry.count} titles</small></button>)}</div></section><section className="section container"><SectionHead eyebrow={`${items.length} titles`} title={language ? `Lyrics in ${language.code.toUpperCase()}` : "Available languages"} />{items.length ? renderLyricCards(items, go) : <div className="empty"><Icon name="book" size={32} /><h3>No lyrics are currently available in this language version.</h3></div>}</section></main>;
+}
+
+function LyricsSubjectPage({ go }: { go: (r: Route) => void }) {
+  const slug = getRouteQueryParam("subject");
+  const subjectOptions = lyricSubjects.map((entry) => ({ ...entry, count: getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.subjectIds.includes(entry.id)).length }));
+  const subject = subjectOptions.find((entry) => entry.id === slug) || subjectOptions[0];
+  const items = subject ? getPublishedLyrics(lyricLibrary).filter((lyric) => lyric.subjectIds.includes(subject.id)) : [];
+
+  return <main><DirectoryHeader go={go} title="Subject / Occasion" text="Find lyrics connected to the event, place, or remembrance theme they celebrate." /><LyricsSubNav go={go} active="lyrics-subjects" /><section className="section container"><div className="library-directory-grid">{subjectOptions.map((entry) => <button key={entry.id} className={subject?.id === entry.id ? "active" : ""} onClick={() => go(`lyrics-subjects?subject=${entry.id}`)}><span>{entry.name}</span><small>{entry.count} titles</small></button>)}</div></section><section className="section container"><SectionHead eyebrow={`${items.length} titles`} title={subject ? `${subject.name} lyrics` : "Subjects and occasions"} />{items.length ? renderLyricCards(items, go) : <div className="empty"><Icon name="book" size={32} /><h3>No lyrics are available for this subject or occasion yet.</h3></div>}</section></main>;
 }
 
 function LyricDetail({ go }: { go: (r: Route) => void }) {
   const [copied, setCopied] = useState(false);
-  const copy = () => { navigator.clipboard?.writeText("Prototype lyrics content"); setCopied(true); setTimeout(() => setCopied(false), 1500) };
-  return <main className="reading-bg"><div className="container narrow"><Breadcrumbs items={["Lyrics", "Mustafa Jaan-e-Rehmat"]} go={go} /><article className="lyric-reading"><span className="badge">Durood-o-Salam</span><h1>Mustafa Jaan-e-Rehmat Pe Lakhon Salam</h1><p className="lead">A timeless expression of love and reverence.</p><div className="detail-meta"><span><small>RECITED BY</small>Owais Raza Qadri</span><span><small>WRITTEN BY</small>Imam Ahmed Raza Khan</span><span><small>LANGUAGE</small>Urdu</span></div><div className="reader-tools"><select aria-label="Script"><option>Roman Urdu</option><option>Urdu Script</option><option>Hindi</option></select><div><Btn variant="outline" icon={copied ? "check" : "copy"} onClick={copy}>{copied ? "Copied" : "Copy Lyrics"}</Btn><Btn variant="outline" icon="share" onClick={() => navigator.share?.({ title: "Mustafa Jaan-e-Rehmat" })}>Share</Btn></div></div><div className="lyrics-text"><p>Mustafa jaan-e-rehmat pe lakhon salam<br />Sham-e bazm-e hidayat pe lakhon salam</p><p>Meher-e charkh-e nubuwwat pe roshan durood<br />Gul-e bagh-e risalat pe lakhon salam</p><aside>Prototype excerpt for layout demonstration. Full lyrics should be verified and attributed before publication.</aside></div></article><section className="related"><SectionHead title="Related Lyrics" action="Back to Lyrics" onAction={() => go("lyrics")} /><div className="lyrics-grid">{lyrics.slice(1, 3).map((x, i) => <LyricsCard item={x} index={i} key={x.title} onClick={() => go("lyric-detail")} />)}</div></section></div></main>;
+  const [shareMessage, setShareMessage] = useState("");
+  const lyricId = getRouteQueryParam("id");
+  const lyric = findLyricById(lyricId) || getPublishedLyrics(lyricLibrary)[0];
+  const [selectedLanguage, setSelectedLanguage] = useState(() => lyric?.languageVersions?.[0]?.code || "ur");
+
+  useEffect(() => {
+    if (!lyric) return;
+    const next = lyric.languageVersions.some((entry) => entry.code === selectedLanguage) ? selectedLanguage : lyric.languageVersions[0]?.code || "ur";
+    setSelectedLanguage(next);
+  }, [lyric, selectedLanguage]);
+
+  if (!lyric) {
+    return <main className="reading-bg"><div className="container narrow"><Breadcrumbs items={["Lyrics", "Not found"]} go={go} /><div className="empty"><Icon name="book" size={32} /><h3>Lyric not found</h3><p>The requested lyric is unavailable in the current library. Try browsing from the main Lyrics page.</p><button className="btn btn-primary" onClick={() => go("lyrics")}>Back to all lyrics</button></div></div></main>;
+  }
+
+  const version = lyric.languageVersions.find((entry) => entry.code === selectedLanguage) || lyric.languageVersions[0];
+  const metadataFields = [
+    ["Recited By", getLyricArtistName(lyric) || "Traditional"],
+    ["Written By", getLyricWriterName(lyric) || "Traditional"],
+    ["Published", formatLyricDate(lyric.createdAt)],
+    ["Book", getLyricBookName(lyric) || "—"],
+    ["Subject", lyric.subjectIds?.length ? lyricSubjects.find((subject) => subject.id === lyric.subjectIds[0])?.name || "—" : "—"],
+  ] as const;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(version.text);
+      setCopied(true);
+      setShareMessage("");
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+      setShareMessage("Clipboard access is unavailable in this browser.");
+    }
+  };
+
+  const share = async () => {
+    const url = `${window.location.origin}${window.location.pathname}#lyric-detail?id=${lyric.id}`;
+    const shareText = `${lyric.title}\n${version.text}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: lyric.title, text: shareText, url });
+        setShareMessage("Share dialog opened.");
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setShareMessage("Share link copied to your clipboard.");
+    } catch {
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareMessage("Share was unavailable, so the page link was copied instead.");
+      } catch {
+        setShareMessage("Sharing is unavailable in this browser.");
+      }
+    }
+  };
+
+  const relatedLyrics = getPublishedLyrics(lyricLibrary).filter((entry) => entry.id !== lyric.id).slice(0, 2);
+
+  return <main className="reading-bg"><div className="container narrow"><Breadcrumbs items={["Lyrics", lyric.title]} go={go} /><article className="lyric-reading lyric-detail-page"><span className="badge">{getLyricCategoryNames(lyric).join(" • ") || "Devotional"}</span><h1>{lyric.title}</h1>{lyric.tags?.[0] ? <p className="lead">{lyric.tags[0]} and remembrance</p> : null}<div className="lyric-toolbar"><div className="lyric-toolbar-left"><label className="lang-select"><span className="sr-only">Select language</span><select aria-label="Select lyric language" value={selectedLanguage} onChange={(event) => setSelectedLanguage(event.target.value)}>{lyric.languageVersions.map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}</select></label></div><div className="lyric-toolbar-actions"><Btn variant="outline" icon={copied ? "check" : "copy"} onClick={() => void copy()}>{copied ? "Copied" : "Copy Lyrics"}</Btn><Btn variant="outline" icon="share" onClick={() => void share()}>Share</Btn></div></div>{shareMessage && <div className="lyric-share-status">{shareMessage}</div>}{lyric.tags?.length ? <div className="tag-row">{lyric.tags.map((tag) => <span key={tag} className="badge soft-badge">#{tag}</span>)}</div> : null}<div className="lyrics-text" lang={version.code} dir={version.dir || "ltr"}><p>{version.text.split("\n").map((line, index) => <span key={`${version.code}-${index}`}><span>{line}</span>{index < version.text.split("\n").length - 1 ? <br /> : null}</span>)}</p>{lyric.tags?.length ? <aside>Keywords: {lyric.tags.join(" • ")}</aside> : null}</div><div className="detail-meta-row">{metadataFields.map(([label, value]) => <div key={label} className="detail-meta-item"><small>{label}</small><span>{value}</span></div>)}</div></article>{lyric.relatedAudio?.length ? <section className="related"><SectionHead title="Related Audio" action="Back to Lyrics" onAction={() => go("lyrics")} /><div className="audio-grid light">{lyric.relatedAudio.map((item) => <article className="audio-card reveal" key={item.title}><div className="audio-art green"><div className="arch-art"><span>ذِكْر</span></div><button className="play-btn" aria-label={`Play ${item.title}`} onClick={() => window.open(item.url, "_blank", "noopener")}><Icon name="play" /></button></div><div className="audio-info"><span className="badge">Audio</span><h3>{item.title}</h3><p>Related to {lyric.title}</p><div className="media-meta"><span>Link</span><span>Available</span></div></div></article>)}</div></section> : null}{lyric.relatedVideos?.length ? <section className="related"><SectionHead title="Related Videos" /><div className="audio-grid light">{lyric.relatedVideos.map((video) => <article className="audio-card reveal" key={video.title}><div className="audio-art gold"><div className="arch-art"><span>▶</span></div><button className="play-btn" aria-label={`Open ${video.title}`} onClick={() => window.open(video.url, "_blank", "noopener")}><Icon name="play" /></button></div><div className="audio-info"><span className="badge">Video</span><h3>{video.title}</h3><p>YouTube reference</p><div className="media-meta"><span>Shareable</span><span>Watch</span></div></div></article>)}</div></section> : null}<section className="related"><SectionHead title="Related Lyrics" action="Read All Lyrics" onAction={() => go("lyrics")} /><div className="lyrics-grid">{relatedLyrics.map((item, index) => <LyricsCard item={item} index={index} key={item.id} onClick={() => go(`lyric-detail?id=${item.id}`)} />)}</div></section></div></main>;
 }
 
 function QuranTabs({ go, active }: { go: (r: Route) => void; active: string }) {
@@ -610,7 +827,7 @@ function AudioPage({ go }: { go: (r: Route) => void }) {
 
 function AudioDetail({ go }: { go: (r: Route) => void }) {
   const [playing, setPlaying] = useState(false);
-  return <main className="reading-bg"><div className="container"><Breadcrumbs items={["Audio", "Karam Mangta Hoon"]} go={go} /><div className="audio-detail"><div className="audio-art green large"><div className="arch-art"><span>ذِكْر</span></div></div><div><span className="badge">Naat</span><h1>Karam Mangta Hoon</h1><p className="lead">Recited by Owais Raza Qadri</p><div className="detail-meta"><span><small>PUBLISHED</small>08 May 2025</span><span><small>DURATION</small>06:24</span></div><div className="player"><button className="play-main" onClick={() => setPlaying(!playing)} aria-label={playing ? "Pause audio" : "Play audio"}>{playing ? <span>Ⅱ</span> : <Icon name="play" size={24} />}</button><span>0:00</span><input type="range" min="0" max="100" defaultValue="28" aria-label="Audio progress" /><span>6:24</span><Icon name="volume" /></div><p className="prototype-note">Player interaction is demonstrated visually. Connect a valid licensed audio source for playback.</p><div className="button-row"><Btn variant="outline" icon="share" onClick={() => navigator.share?.({ title: "Karam Mangta Hoon" })}>Share</Btn><Btn variant="outline" icon="heart">Save</Btn></div></div></div><section className="related"><SectionHead title="Related Lyrics" action="Read All Lyrics" onAction={() => go("lyrics")} /><div className="lyrics-grid">{lyrics.slice(0, 2).map((x, i) => <LyricsCard item={x} index={i} key={x.title} onClick={() => go("lyric-detail")} />)}</div></section><section className="related"><SectionHead title="Related Audio" action="View All Audio" onAction={() => go("audio")} /><div className="audio-grid light">{audio.slice(1).map((x, i) => <AudioCard key={x.title} item={x} index={i} onClick={() => go("audio-detail")} />)}</div></section></div></main>;
+  return <main className="reading-bg"><div className="container"><Breadcrumbs items={["Audio", "Karam Mangta Hoon"]} go={go} /><div className="audio-detail"><div className="audio-art green large"><div className="arch-art"><span>ذِكْر</span></div></div><div><span className="badge">Naat</span><h1>Karam Mangta Hoon</h1><p className="lead">Recited by Owais Raza Qadri</p><div className="detail-meta"><span><small>PUBLISHED</small>08 May 2025</span><span><small>DURATION</small>06:24</span></div><div className="player"><button className="play-main" onClick={() => setPlaying(!playing)} aria-label={playing ? "Pause audio" : "Play audio"}>{playing ? <span>Ⅱ</span> : <Icon name="play" size={24} />}</button><span>0:00</span><input type="range" min="0" max="100" defaultValue="28" aria-label="Audio progress" /><span>6:24</span><Icon name="volume" /></div><p className="prototype-note">Player interaction is demonstrated visually. Connect a valid licensed audio source for playback.</p><div className="button-row"><Btn variant="outline" icon="share" onClick={() => navigator.share?.({ title: "Karam Mangta Hoon" })}>Share</Btn><Btn variant="outline" icon="heart">Save</Btn></div></div></div><section className="related"><SectionHead title="Related Lyrics" action="Read All Lyrics" onAction={() => go("lyrics")} /><div className="lyrics-grid">{getPublishedLyrics(lyricLibrary).slice(0, 2).map((x, i) => <LyricsCard item={x} index={i} key={x.id} onClick={() => go(`lyric-detail?id=${x.id}`)} />)}</div></section><section className="related"><SectionHead title="Related Audio" action="View All Audio" onAction={() => go("audio")} /><div className="audio-grid light">{audio.slice(1).map((x, i) => <AudioCard key={x.title} item={x} index={i} onClick={() => go("audio-detail")} />)}</div></section></div></main>;
 }
 
 function Services({ go }: { go: (r: Route) => void }) {
@@ -692,6 +909,12 @@ export default function App() {
   const page = useMemo(() => {
     switch (route) {
       case "lyrics": return <LyricsPage go={go} />;
+      case "lyrics-category": return <LyricsCategoryPage go={go} />;
+      case "lyrics-artists": return <LyricsArtistPage go={go} />;
+      case "lyrics-poets": return <LyricsPoetPage go={go} />;
+      case "lyrics-books": return <LyricsBookPage go={go} />;
+      case "lyrics-languages": return <LyricsLanguagePage go={go} />;
+      case "lyrics-subjects": return <LyricsSubjectPage go={go} />;
       case "lyric-detail": return <LyricDetail go={go} />;
       case "quran": return <QuranHome go={go} />;
       case "surahs": return <SurahDirectory go={go} />;
