@@ -195,6 +195,42 @@ export function getPublishedLyrics(list = lyrics) {
         .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
 }
 
+export function getLyricsByCategory(list = lyrics, categoryId) {
+    const published = getPublishedLyrics(list);
+    if (!categoryId) return [];
+    return published.filter((item) => (item.categoryIds || []).includes(categoryId));
+}
+
+export function getLyricsByArtist(list = lyrics, artistId) {
+    const published = getPublishedLyrics(list);
+    if (!artistId) return [];
+    return published.filter((item) => item.artistId === artistId);
+}
+
+export function getLyricsByPoet(list = lyrics, poetId) {
+    const published = getPublishedLyrics(list);
+    if (!poetId) return [];
+    return published.filter((item) => item.writerId === poetId);
+}
+
+export function getLyricsByBook(list = lyrics, bookId) {
+    const published = getPublishedLyrics(list);
+    if (!bookId) return [];
+    return published.filter((item) => item.bookId === bookId);
+}
+
+export function getLyricsByLanguage(list = lyrics, languageCode) {
+    const published = getPublishedLyrics(list);
+    if (!languageCode) return [];
+    return published.filter((item) => item.languageVersions?.some((version) => version.code === languageCode));
+}
+
+export function getLyricsBySubject(list = lyrics, subjectId) {
+    const published = getPublishedLyrics(list);
+    if (!subjectId) return [];
+    return published.filter((item) => (item.subjectIds || []).includes(subjectId));
+}
+
 export function filterLyricsByTitle(list, search = "", letter = "All") {
     const query = (search || "").trim().toLowerCase();
     return list.filter((item) => {

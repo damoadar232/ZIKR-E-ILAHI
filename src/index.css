@@ -23,7 +23,11 @@
 }
 
 html {
-    scroll-behavior: smooth
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+    background: var(--ink)
 }
 
 body {
@@ -31,7 +35,23 @@ body {
     background: #fff;
     color: var(--text);
     font-family: var(--sans);
-    line-height: 1.6
+    line-height: 1.6;
+    max-width: 100%;
+    overflow-x: clip;
+    overscroll-behavior-x: none
+}
+
+#root {
+    max-width: 100%;
+    overflow-x: clip
+}
+
+.alphabet,
+.dark-section .audio-grid,
+.explore-links .container,
+.admin-table,
+.quran-tools .segmented {
+    overscroll-behavior-x: contain
 }
 
 button,
@@ -118,10 +138,11 @@ h3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 max(24px, calc((100vw - 1320px)/2));
+    padding: 0 max(24px, calc(50% - 660px));
     gap: 36px;
     position: relative;
-    z-index: 50
+    z-index: 50;
+    max-width: 100%
 }
 
 .brand-button,
@@ -129,14 +150,15 @@ h3 {
     background: none;
     border: 0;
     color: inherit;
-    padding: 0
+    padding: 0;
 }
 
 .logo {
     display: flex;
     align-items: center;
     gap: 12px;
-    white-space: nowrap
+    white-space: nowrap;
+    margin-bottom: 10px;
 }
 
 .logo-mark {
@@ -410,14 +432,33 @@ h3 {
 
 .feature-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     background: white;
-    box-shadow: 0 20px 60px rgba(30, 20, 10, .12)
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(30, 20, 10, .12);
+    max-width: 100%
+}
+
+.feature-grid>.card-reveal {
+    position: relative;
+    height: 100%
+}
+
+.feature-grid>.card-reveal:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 22%;
+    bottom: 22%;
+    right: 0;
+    width: 1px;
+    background: var(--line);
+    pointer-events: none;
+    z-index: 1
 }
 
 .feature-card {
     border: 0;
-    border-right: 1px solid var(--line);
     background: #fff;
     padding: 25px 20px;
     display: grid;
@@ -431,10 +472,6 @@ h3 {
 .feature-card:hover {
     background: var(--cream);
     transform: translateY(-5px)
-}
-
-.feature-card:last-child {
-    border: 0
 }
 
 .feature-icon {
@@ -741,6 +778,57 @@ h3 {
 .audio-info p {
     color: #aaa;
     font-size: 12px
+}
+
+.featured-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0 0;
+    border-radius: 999px;
+    background: rgba(225, 197, 130, .14);
+    color: var(--gold2);
+    padding: 5px 9px;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    font-weight: 700
+}
+
+.audio-card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px
+}
+
+.audio-inline-action {
+    border: 1px solid rgba(255, 255, 255, .15);
+    background: rgba(3, 16, 12, .06);
+    color: var(--green);
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer
+}
+
+.audio-inline-action.secondary {
+    border-color: rgba(36, 76, 60, .2);
+    background: transparent
+}
+
+.audio-description {
+    margin-top: 18px;
+    color: var(--muted);
+    line-height: 1.7
+}
+
+.player-error {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #a63f2d
 }
 
 .duration {
@@ -1086,6 +1174,8 @@ h3 {
 
 .search-box {
     height: 56px;
+    min-height: 56px;
+    box-sizing: border-box;
     background: #fff;
     border: 1px solid var(--line);
     display: flex;
@@ -1099,7 +1189,9 @@ h3 {
     border: 0;
     outline: 0;
     width: 100%;
-    background: none
+    background: none;
+    box-sizing: border-box;
+    line-height: 1.2
 }
 
 .search-box button {
@@ -1143,7 +1235,10 @@ h3 {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    height: 56px;
+    min-height: 56px;
     min-width: 148px;
+    box-sizing: border-box;
     padding: 0 18px;
     border: 1px solid var(--line);
     background: #fff;
@@ -1151,6 +1246,7 @@ h3 {
     font-size: 12px;
     letter-spacing: .08em;
     text-transform: uppercase;
+    line-height: 1;
     box-shadow: 0 10px 30px rgba(35, 30, 20, .05)
 }
 
@@ -1203,8 +1299,10 @@ h3 {
 .quran-nav {
     display: flex;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     scrollbar-width: none;
-    border-bottom: 1px solid var(--line)
+    border-bottom: 1px solid var(--line);
+    max-width: 100%
 }
 
 .tabs button,
@@ -1624,8 +1722,13 @@ h3 {
 
 .page-hero .search-box {
     max-width: 700px;
-    margin-top: 35px;
+    /* margin-top: 35px; */
     color: var(--text)
+}
+
+.page-hero .lyrics-search-row {
+    width: min(100%, 700px);
+    margin-top: 35px
 }
 
 .quran-nav {
@@ -2382,32 +2485,56 @@ h3 {
 }
 
 .auth-page {
+    box-sizing: border-box;
+    height: 100vh;
     min-height: 100vh;
     display: grid;
     grid-template-columns: 1fr 1fr
 }
 
+@supports (height: 100dvh) {
+    .auth-page {
+        height: 100dvh;
+        min-height: 100dvh
+    }
+}
+
 .auth-panel {
+    box-sizing: border-box;
     max-width: 570px;
     width: 100%;
-    padding: 60px 80px;
+    padding: clamp(18px, 3.5vh, 30px) clamp(28px, 5.8vw, 72px);
     justify-self: end
 }
 
 .auth-logo {
     color: var(--ink);
     display: block;
-    margin-bottom: 70px
+    margin-bottom: clamp(14px, 3vh, 24px)
 }
 
 .auth-panel h1 {
-    font-size: 48px;
-    margin-bottom: 12px
+    font-size: 44px;
+    line-height: 1.04;
+    margin-bottom: 30px
 }
 
 .auth-panel>p {
     color: var(--muted);
-    margin-bottom: 35px
+    margin-bottom: clamp(14px, 2.5vh, 20px)
+}
+
+.auth-panel .field {
+    margin-bottom: clamp(8px, 1.2vh, 10px)
+}
+
+.auth-panel .field>span {
+    margin-bottom: 5px
+}
+
+.auth-panel .field input {
+    min-height: 40px;
+    padding: 9px 13px
 }
 
 .password {
@@ -2429,7 +2556,7 @@ h3 {
     display: flex;
     gap: 10px;
     font-size: 11px;
-    margin: 10px 0 20px
+    margin: 8px 0 12px
 }
 
 .auth-panel form>.btn {
@@ -2438,8 +2565,8 @@ h3 {
 
 .auth-switch {
     border-top: 1px solid var(--line);
-    margin-top: 30px;
-    padding-top: 20px;
+    margin-top: 14px;
+    padding-top: 12px;
     font-size: 11px
 }
 
@@ -2455,14 +2582,17 @@ h3 {
     background-position: center;
     display: flex;
     align-items: flex-end;
-    padding: 70px;
+    box-sizing: border-box;
+    padding: clamp(28px, 5vw, 64px);
     color: #fff
 }
 
 .auth-image blockquote {
     font-family: var(--serif);
     font-size: 35px;
-    max-width: 500px
+    line-height: 1.12;
+    max-width: 500px;
+    margin: 0
 }
 
 .auth-image small {
@@ -2472,6 +2602,52 @@ h3 {
     font-size: 9px;
     letter-spacing: .15em;
     margin-top: 20px
+}
+
+@media (max-height: 680px) and (min-width: 761px) {
+    .auth-panel {
+        padding-block: clamp(14px, 2.8vh, 20px)
+    }
+
+    .auth-logo {
+        margin-bottom: clamp(12px, 2vh, 18px)
+    }
+
+    .auth-panel h1 {
+        font-size: 38px;
+        line-height: 1.02;
+        margin-bottom: 30px
+    }
+
+    .auth-panel>p {
+        margin-bottom: 20px
+    }
+
+    .auth-panel .field {
+        margin-bottom: 6px
+    }
+
+    .auth-panel .field input {
+        min-height: 38px;
+        padding-block: 8px
+    }
+
+    .checkbox {
+        margin: 5px 0 8px
+    }
+
+    .auth-switch {
+        margin-top: 10px;
+        padding-top: 8px
+    }
+
+    .auth-image {
+        padding: 36px
+    }
+
+    .auth-image blockquote {
+        font-size: 30px
+    }
 }
 
 .admin {
@@ -2685,8 +2861,12 @@ footer {
 
 .footer-grid {
     display: grid;
-    grid-template-columns: 1.6fr .7fr .7fr 1.2fr;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, .7fr) minmax(0, .7fr) minmax(0, 1.2fr);
     gap: 70px
+}
+
+.footer-grid>div {
+    min-width: 0
 }
 
 .footer-grid p {
@@ -2930,8 +3110,20 @@ footer {
         grid-template-columns: repeat(3, 1fr)
     }
 
-    .feature-card:nth-child(3) {
-        border: 0
+    .feature-grid>.card-reveal:nth-child(3n)::after {
+        display: none
+    }
+
+    .feature-grid>.card-reveal:nth-child(n+4)::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 1px;
+        background: var(--line);
+        pointer-events: none;
+        z-index: 1
     }
 
     .quran-feature-inner,
@@ -3024,8 +3216,18 @@ footer {
     .feature-grid {
         display: flex;
         overflow-x: auto;
+        overscroll-behavior-x: contain;
+        border-radius: 0;
         box-shadow: none;
         border-bottom: 1px solid var(--line)
+    }
+
+    .feature-grid>.card-reveal:nth-child(3n)::after {
+        display: block
+    }
+
+    .feature-grid>.card-reveal:nth-child(n+4)::before {
+        display: none
     }
 
     .feature-card {
@@ -3429,9 +3631,10 @@ footer {
     grid-template-columns: minmax(220px, 1fr) auto minmax(260px, 1fr);
     align-items: center;
     gap: 18px;
-    padding: 8px max(24px, calc((100vw - 1320px) / 2));
+    padding: 8px max(24px, calc(50% - 660px));
     border-bottom: 1px solid #e7e9e7;
-    background: rgba(255, 255, 255, .97)
+    background: rgba(255, 255, 255, .97);
+    max-width: 100%
 }
 
 .reader-current-surah,
@@ -3789,7 +3992,8 @@ footer {
     top: 0;
     bottom: 0;
     display: flex;
-    width: min(390px, calc(100vw - 24px));
+    width: min(390px, calc(100% - 24px));
+    max-width: 100%;
     flex-direction: column;
     padding: 19px;
     background: #fff;
@@ -3802,12 +4006,14 @@ footer {
 }
 
 .quran-nav-drawer:has(.verse-navigation) {
-    width: min(610px, calc(100vw - 24px))
+    width: min(610px, calc(100% - 24px));
+    max-width: 100%
 }
 
 .translation-drawer {
     right: 0;
-    width: min(420px, calc(100vw - 24px));
+    width: min(420px, calc(100% - 24px));
+    max-width: 100%;
     border-radius: 10px 0 0 10px
 }
 
@@ -4213,7 +4419,7 @@ footer {
     right: 20px;
     bottom: 20px;
     display: flex;
-    max-width: min(460px, calc(100vw - 32px));
+    max-width: min(460px, calc(100% - 32px));
     align-items: center;
     gap: 12px;
     padding: 12px 14px;
@@ -4236,6 +4442,62 @@ footer {
     color: #53675d
 }
 
+.auth-pending-notice {
+    position: fixed;
+    z-index: 80;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    display: flex;
+    width: min(100%, max-content);
+    max-width: calc(100% - 32px);
+    min-height: 54px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-inline: auto;
+    padding: 8px 10px 8px 16px;
+    border: 1px solid #d9dfdc;
+    background: #fff;
+    box-shadow: 0 8px 28px #182c241c;
+    color: #203b32;
+    font-size: 12px
+}
+
+.auth-pending-notice>div {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 8px
+}
+
+.auth-pending-notice button {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--text);
+    font-size: 11px
+}
+
+.auth-pending-notice button:first-child {
+    border-color: var(--green);
+    background: var(--green);
+    color: #fff
+}
+
+@media (max-width: 560px) {
+    .auth-pending-notice {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px
+    }
+
+    .auth-pending-notice>div {
+        justify-content: flex-end
+    }
+}
+
 .quran-bottom-player {
     position: fixed;
     z-index: 30;
@@ -4247,10 +4509,12 @@ footer {
     grid-template-columns: minmax(135px, 1fr) 36px 36px 36px minmax(120px, 2fr) auto minmax(90px, auto) 36px;
     gap: 10px;
     align-items: center;
-    padding: 8px max(22px, calc((100vw - 1180px) / 2));
+    padding: 8px max(22px, calc(50% - 590px));
     border-top: 1px solid #d9dfdc;
     background: #fff;
-    box-shadow: 0 -4px 18px #182c2410
+    box-shadow: 0 -4px 18px #182c2410;
+    max-width: 100%;
+    box-sizing: border-box
 }
 
 .quran-player-track {
@@ -4298,6 +4562,113 @@ footer {
 
 .quran-player-volume input {
     width: 62px
+}
+
+.shared-audio-player {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    left: 18px;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) minmax(280px, 1.9fr) auto;
+    gap: 14px;
+    align-items: center;
+    background: rgba(17, 27, 24, .96);
+    color: #fff;
+    border: 1px solid rgba(225, 197, 130, .3);
+    border-radius: 18px;
+    padding: 14px 18px;
+    box-shadow: 0 22px 40px rgba(0, 0, 0, .28)
+}
+
+.shared-player-meta {
+    display: grid;
+    gap: 4px
+}
+
+.shared-player-meta b {
+    font-size: 14px;
+    color: #fff
+}
+
+.shared-player-meta small {
+    font-size: 11px;
+    color: rgba(255, 255, 255, .72)
+}
+
+.shared-player-controls {
+    display: grid;
+    grid-template-columns: 36px 36px 36px minmax(160px, 1fr) auto auto auto;
+    gap: 8px;
+    align-items: center
+}
+
+.shared-player-controls button {
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    cursor: pointer
+}
+
+.shared-player-controls button.main {
+    background: var(--gold);
+    color: var(--ink)
+}
+
+.shared-player-controls button:disabled {
+    opacity: .45;
+    cursor: not-allowed
+}
+
+.shared-player-controls input {
+    width: 100%;
+    accent-color: var(--gold)
+}
+
+.shared-player-controls span {
+    font-size: 11px;
+    color: rgba(255, 255, 255, .8)
+}
+
+.shared-player-controls .divisor {
+    opacity: .65
+}
+
+.shared-player-speed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end
+}
+
+.shared-player-speed button {
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(255, 255, 255, .03);
+    color: #fff;
+    border-radius: 999px;
+    min-width: 44px;
+    padding: 7px 9px;
+    cursor: pointer
+}
+
+.shared-player-speed button.active {
+    background: rgba(225, 197, 130, .18);
+    border-color: rgba(225, 197, 130, .5);
+    color: #f2d17d
+}
+
+.shared-player-speed .close-player {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%
 }
 
 .quran-reading-page:has(.quran-bottom-player) .reader-surah-pager {
@@ -4414,12 +4785,14 @@ footer {
     }
 
     .quran-drawer {
-        width: min(370px, calc(100vw - 18px));
+        width: min(370px, calc(100% - 18px));
+        max-width: 100%;
         padding: 14px
     }
 
     .quran-nav-drawer:has(.verse-navigation) {
-        width: 100vw;
+        width: 100%;
+        max-width: 100%;
         padding: 12px
     }
 
@@ -4451,7 +4824,8 @@ footer {
     }
 
     .translation-drawer {
-        width: 100vw;
+        width: 100%;
+        max-width: 100%;
         border-radius: 0
     }
 
@@ -4504,10 +4878,6 @@ footer {
     .reader-ayah {
         transition: none
     }
-}
-
-.feature-grid>.card-reveal {
-    height: 100%
 }
 
 .feature-grid>.card-reveal .feature-card {
