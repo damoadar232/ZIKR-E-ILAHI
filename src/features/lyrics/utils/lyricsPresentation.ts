@@ -5,7 +5,15 @@ export function getLyricCategoryNames(item: any) {
 }
 
 export function getLyricArtistName(item: any) {
-    return artists.find((artist) => artist.id === item.artistId)?.name || item.artist || "Unknown artist";
+    return getLyricArtistNames(item).join(", ") || "Unknown artist";
+}
+
+export function getLyricArtistNames(item: any) {
+    const explicitNames = Array.isArray(item.reciters) ? item.reciters.filter((name: unknown): name is string => typeof name === "string" && !!name.trim()) : [];
+    const artistIds = Array.isArray(item.artistIds) ? item.artistIds : [item.artistId];
+    const relatedNames = artistIds.filter(Boolean).map((id: string) => artists.find((artist) => artist.id === id)?.name || id);
+    const names = explicitNames.length ? explicitNames : relatedNames.length ? relatedNames : [item.artist].filter(Boolean);
+    return [...new Set(names)];
 }
 
 export function getLyricWriterName(item: any) {

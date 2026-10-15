@@ -204,7 +204,7 @@ export function getLyricsByCategory(list = lyrics, categoryId) {
 export function getLyricsByArtist(list = lyrics, artistId) {
     const published = getPublishedLyrics(list);
     if (!artistId) return [];
-    return published.filter((item) => item.artistId === artistId);
+    return published.filter((item) => item.artistId === artistId || (item.artistIds || []).includes(artistId));
 }
 
 export function getLyricsByPoet(list = lyrics, poetId) {

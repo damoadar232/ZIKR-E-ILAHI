@@ -21,7 +21,7 @@ export function PageHero({ eyebrow, title, text, children }: { eyebrow: string; 
 
 export function Tabs({ items, active, setActive }: { items: string[]; active: string; setActive: (value: string) => void }) {
     const t = useInterfaceText();
-    return <div className="tabs">{items.map(item => <button key={item} className={active === item ? "active" : ""} onClick={() => setActive(item)}>{t(item)}</button>)}</div>;
+    return <div className="tabs" role="tablist">{items.map(item => <button key={item} type="button" role="tab" aria-selected={active === item} className={active === item ? "active" : ""} onClick={() => setActive(item)}>{t(item)}</button>)}</div>;
 }
 
 export function SearchBox({ value, setValue, placeholder = "Search by title, artist, writer..." }: { value: string; setValue: (value: string) => void; placeholder?: string }) {

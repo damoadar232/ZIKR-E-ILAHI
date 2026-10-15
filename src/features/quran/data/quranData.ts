@@ -52,6 +52,17 @@ export const ayahContent: Record<number, Record<number, { arabic: string; transl
     },
 };
 
+export const quranAyahRecords = Object.entries(ayahContent).flatMap(([surahNumber, ayahs]) =>
+    Object.entries(ayahs).map(([ayahNumber, content]) => ({
+        id: `${surahNumber}:${ayahNumber}`,
+        surahNumber: Number(surahNumber),
+        ayahNumber: Number(ayahNumber),
+        arabic: content.arabic,
+        translations: content.translations,
+        status: "published",
+    })),
+);
+
 export const juzStarts = [
     { juz: 1, surah: 1, ayah: 1 }, { juz: 2, surah: 2, ayah: 142 }, { juz: 3, surah: 2, ayah: 253 },
     { juz: 4, surah: 3, ayah: 93 }, { juz: 5, surah: 4, ayah: 24 }, { juz: 6, surah: 4, ayah: 148 },

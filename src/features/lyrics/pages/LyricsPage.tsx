@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useContentCollection } from "../../../app/hooks/useContentCollection";
 import { getPublishedLyrics, lyrics as lyricLibrary, lyricCategories, artists, poets, lyricBooks, lyricSubjects, filterLyricsByTitle, getLyricsByCategory, getLyricsByArtist, getLyricsByPoet, getLyricsByBook, getLyricsByLanguage, getLyricsBySubject } from "../../../lyricsData";
 import { interfaceAttributeText, LocalizedText, useInterfaceText } from "../../../app/providers/interfaceLanguage";
 import { getRouteQueryParam } from "../../../app/utils/getRouteQueryParam";
@@ -6,6 +7,8 @@ import { DirectoryHeader, SearchBox } from "../../../components/common/PagePrimi
 import { SectionHead } from "../../../components/common/SectionHead";
 import { Icon } from "../../../components/ui";
 import { LyricsCard } from "../components/LyricsCard";
+import { YouTubeVideoGrid } from "../components/YouTubeVideoGrid";
+import { relatedVideoReferences } from "../data/relatedVideoReferences";
 
 export const lyricsRoutePaths = ["lyrics", "lyrics-category", "lyrics-artists", "lyrics-poets", "lyrics-books", "lyrics-languages", "lyrics-subjects"];
 
@@ -30,29 +33,10 @@ function matchesLyricsLetter(value: string, letter: string) {
 }
 
 function LyricsBrowseControl({ go, active }: { go: (route: string) => void; active: string }) {
-    const [open, setOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
     const t = useInterfaceText();
-    useEffect(() => {
-        if (!open) return;
-        const closeOnOutsidePointer = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpen(false);
-        };
-        const closeOnEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") setOpen(false);
-        };
-        document.addEventListener("mousedown", closeOnOutsidePointer);
-        document.addEventListener("keydown", closeOnEscape);
-        return () => {
-            document.removeEventListener("mousedown", closeOnOutsidePointer);
-            document.removeEventListener("keydown", closeOnEscape);
-        };
-    }, [open]);
-
-    return <div className="lyrics-browse-wrap" ref={menuRef}>
-        <button type="button" className="lyrics-browse-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(value => !value)}>{t("Browse")} <Icon name="chevron" size={14} /></button>
-        {open && <div className="lyrics-browse-menu" role="menu" aria-label={interfaceAttributeText("Lyrics browse destinations")}>{lyricsBrowseItems.map(([label, route]) => <button key={route} type="button" role="menuitem" className={active === route ? "active" : ""} onClick={() => { go(route); setOpen(false); }}>{t(label)}</button>)}</div>}
-    </div>;
+    return <nav className="category-row tabs lyrics-category-tabs" role="tablist" aria-label={interfaceAttributeText("Lyrics browse destinations")}>
+        {lyricsBrowseItems.map(([label, route]) => <button key={route} type="button" role="tab" aria-selected={active === route} className={active === route ? "active" : ""} onClick={() => go(route)}>{t(label)}</button>)}
+    </nav>;
 }
 
 function renderLyricCards(items: any[], go: (route: string) => void) {
@@ -60,10 +44,11 @@ function renderLyricCards(items: any[], go: (route: string) => void) {
 }
 
 export function LyricsPage({ go, route }: { go: (route: string) => void; route: string }) {
+    const editableLyrics = useContentCollection("lyrics", lyricLibrary);
     const [search, setSearch] = useState("");
     const [letter, setLetter] = useState("All");
     const activeRoute = route.split("?")[0];
-    const published = getPublishedLyrics(lyricLibrary);
+    const published = getPublishedLyrics(editableLyrics);
     const query = search.trim().toLowerCase();
     const optionConfig: Record<string, LyricsBrowseConfig> = {
         "lyrics-category": { title: "Categories", heading: "Browse by Category", parameter: "category", noun: "categories", entries: lyricCategories.map(entry => ({ id: entry.id, name: entry.name, lyrics: getLyricsByCategory(published, entry.id) })) },
@@ -104,10 +89,10 @@ export function LyricsPage({ go, route }: { go: (route: string) => void; route: 
     const emptyMessage = activeRoute === "lyrics" ? "No lyrics match those filters." : `No lyrics match this ${config?.title.toLowerCase() || "category"} selection.`;
     const renderEmpty = (message: string, help: string) => <div className="empty"><Icon name="search" size={32} /><h3>{message}</h3><p><LocalizedText text={help} /></p><button className="btn btn-primary" onClick={clearFilters}><LocalizedText text={"Clear filters"} /></button></div>;
 
-    return <main><DirectoryHeader go={go} title={interfaceAttributeText("Devotional Lyrics")} text="Discover words of praise and devotion across languages, traditions, and beloved voices." /><div className="container directory-controls"><div className="lyrics-search-row"><SearchBox value={search} setValue={setSearch} placeholder={placeholder} /><LyricsBrowseControl go={selectRoute} active={activeRoute} /></div><div className="alphabet" aria-label={interfaceAttributeText("Filter by first letter")}><button className={letter === "All" ? "active" : ""} onClick={() => setLetter("All")}><LocalizedText text={"All"} /></button>{["0-9", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].map(option => <button key={option} className={letter === option ? "active" : ""} onClick={() => setLetter(option)}>{option === "0-9" ? "0–9" : option}</button>)}</div></div>
+    return <main><DirectoryHeader go={go} title={interfaceAttributeText("Devotional Lyrics")} text="Discover words of praise and devotion across languages, traditions, and beloved voices." /><div className="container directory-controls"><div className="lyrics-search-row"><SearchBox value={search} setValue={setSearch} placeholder={placeholder} /></div><LyricsBrowseControl go={selectRoute} active={activeRoute} /><div className="alphabet" aria-label={interfaceAttributeText("Filter by first letter")}><button className={letter === "All" ? "active" : ""} onClick={() => setLetter("All")}><LocalizedText text={"All"} /></button>{["0-9", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].map(option => <button key={option} className={letter === option ? "active" : ""} onClick={() => setLetter(option)}>{option === "0-9" ? "0–9" : option}</button>)}</div></div>
         {activeRoute === "lyrics" ? <section className="section container"><SectionHead eyebrow={resultEyebrow} title={resultTitle} />{resultLyrics.length ? renderLyricCards(resultLyrics, go) : renderEmpty(emptyMessage, "Try another title or letter, or reset the filters.")}</section> : <>
             {overview && config && <section className="section container"><SectionHead eyebrow={`${directoryEntries.length} ${config.noun}`} title={config.heading} />{directoryEntries.length ? <div className="library-directory-grid">{directoryEntries.map(entry => <button key={entry.id} onClick={() => selectRoute(`${activeRoute}?${config.parameter}=${encodeURIComponent(entry.id)}`)}><span>{entry.name}</span><small>{entry.lyrics.length} {entry.lyrics.length === 1 ? "title" : "titles"}</small></button>)}</div> : renderEmpty(`No ${config.noun} match those filters.`, "Try another search or letter.")}</section>}
             {selected && <section className="section container"><SectionHead eyebrow={resultEyebrow} title={resultTitle} action={`Back to ${config.heading}`} onAction={returnToOverview} />{resultLyrics.length ? renderLyricCards(resultLyrics, go) : renderEmpty(emptyMessage, "Try another title or letter, or return to the overview.")}</section>}
             {!config && <section className="section container"><SectionHead eyebrow="Lyrics library" title={interfaceAttributeText("Recently Published")} />{allLyrics.length ? renderLyricCards(allLyrics, go) : renderEmpty(emptyMessage, "Try another title or letter, or reset the filters.")}</section>}
-        </>}</main>;
+        </>}{activeRoute === "lyrics" && <section className="section container"><div className="section-head"><div><h2>Video references</h2><p>Supplied YouTube links not yet associated with a specific lyrics record.</p></div></div><YouTubeVideoGrid videos={relatedVideoReferences} /></section>}</main>;
 }

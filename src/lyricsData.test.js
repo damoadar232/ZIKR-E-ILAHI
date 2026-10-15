@@ -60,3 +60,17 @@ test("lyrics categories, language, and subject filters reflect the actual datase
         ["786 Durood", "Main So Jaun"].sort(),
     );
 });
+
+test("artist filters include additional reciters without changing legacy artistId records", () => {
+    const multiReciter = {
+        id: "shared-recitation",
+        title: "Shared recitation",
+        artistId: "traditional",
+        artistIds: ["zohaib-ashrafi"],
+        status: "published",
+        createdAt: "2025-01-01T00:00:00Z",
+    };
+
+    assert.deepEqual(getLyricsByArtist([...lyrics, multiReciter], "traditional").map((item) => item.id).includes("shared-recitation"), true);
+    assert.deepEqual(getLyricsByArtist([...lyrics, multiReciter], "zohaib-ashrafi").map((item) => item.id).includes("shared-recitation"), true);
+});

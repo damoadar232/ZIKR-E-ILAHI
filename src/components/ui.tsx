@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import logoImage from "../assests/logo.png";
 import { GLOBAL_LANGUAGE_KEY, translateInterface } from "../interfacePreferences";
 import { LocalizedText, useInterfaceText } from "../app/providers/interfaceLanguage";
 
@@ -34,7 +35,7 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 }
 
 export function Logo({ compact = false }: { compact?: boolean }) {
-    return <div className="logo"><span className="logo-mark"><span>ذ</span></span>{!compact && <span><b><LocalizedText text={"ZIKR-E-ILAHI"} /></b><small><LocalizedText text={"REMEMBER • REFLECT • RISE"} /></small></span>}</div>;
+    return <div className={`logo${compact ? " compact" : ""}`}><img className="logo-image" src={logoImage} alt="Zikr-e-Ilahi" /></div>;
 }
 
 export function Btn({ children, onClick, variant = "primary", icon, type = "button", disabled = false }: { children: ReactNode; onClick?: () => void; variant?: string; icon?: IconName; type?: "button" | "submit"; disabled?: boolean }) {

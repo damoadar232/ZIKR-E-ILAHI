@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { interfaceAttributeText, useInterfaceLanguage } from "../../app/providers/interfaceLanguage";
+import { interfaceAttributeText } from "../../app/providers/interfaceLanguage";
 import { translateInterface } from "../../interfacePreferences";
 import { Icon, InterfaceControls, Logo } from "../ui";
 
 export function Header({ route, go, language, setLanguage, theme, setTheme, fontScale, setFontScale }: { route: string; go: (route: string) => void; language: string; setLanguage: (value: string) => void; theme: string; setTheme: (value: string) => void; fontScale: number; setFontScale: (value: number) => void }) {
     const [open, setOpen] = useState(false);
-    const nav = [["Home", "home"], ["Lyrics", "lyrics"], ["Quran", "quran"], ["Audio", "audio"], ["Services", "services"], ["E-Books", "ebooks"], ["About Us", "about"], ["Contact Us", "contact"]];
+    const nav = [["Lyrics", "lyrics"], ["Quran", "quran"], ["Audio", "audio"], ["Services", "services"], ["E-Books", "ebooks"], ["About Us", "about"], ["Contact Us", "contact"]];
     const t = (key: string) => translateInterface(language, key);
     return <>
         <header className="header">
@@ -15,7 +15,6 @@ export function Header({ route, go, language, setLanguage, theme, setTheme, font
             </nav>
             <div className="header-actions">
                 <InterfaceControls language={language} setLanguage={setLanguage} theme={theme} setTheme={setTheme} fontScale={fontScale} setFontScale={setFontScale} />
-                <button className="icon-btn" aria-label={t("Search")} onClick={() => go("lyrics")}><Icon name="search" /></button>
                 <button className="login-link" onClick={() => go("login")}><Icon name="user" size={16} /> {t("Register / Login")}</button>
                 <button className="menu-btn" onClick={() => setOpen(!open)} aria-label={interfaceAttributeText("Toggle menu")}><Icon name={open ? "x" : "menu"} /></button>
             </div>
