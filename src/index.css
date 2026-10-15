@@ -27,7 +27,8 @@ html {
     scrollbar-gutter: stable;
     overflow-x: clip;
     overscroll-behavior-x: none;
-    background: var(--ink)
+    background: var(--ink);
+    font-size: 16px
 }
 
 body {
@@ -35,6 +36,7 @@ body {
     background: #fff;
     color: var(--text);
     font-family: var(--sans);
+    font-size: calc(16px * var(--interface-scale, 1));
     line-height: 1.6;
     max-width: 100%;
     overflow-x: clip;
@@ -93,11 +95,11 @@ h2 {
 }
 
 h1 {
-    font-size: clamp(2.8rem, 5vw, 5.8rem)
+    font-size: calc((clamp(2.8rem, 5vw, 5.8rem)) * var(--interface-scale, 1))
 }
 
 h2 {
-    font-size: clamp(1rem, 1vw, 4rem)
+    font-size: calc((clamp(1rem, 1vw, 4rem)) * var(--interface-scale, 1))
 }
 
 h3 {
@@ -118,7 +120,7 @@ h3 {
     background: #0e0e0e;
     color: #aaa;
     text-align: center;
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     letter-spacing: .04em;
     display: flex;
     justify-content: center;
@@ -170,7 +172,7 @@ h3 {
     place-items: center;
     color: var(--gold);
     font-family: var(--arabic);
-    font-size: 22px;
+    font-size: calc((22px) * var(--interface-scale, 1));
     position: relative
 }
 
@@ -184,14 +186,14 @@ h3 {
 
 .logo b {
     font-family: var(--serif);
-    font-size: 19px;
+    font-size: calc((19px) * var(--interface-scale, 1));
     letter-spacing: .08em
 }
 
 .logo small {
     display: block;
     color: #968b77;
-    font-size: 7px;
+    font-size: calc((7px) * var(--interface-scale, 1));
     letter-spacing: .21em;
     margin-top: -2px
 }
@@ -209,7 +211,7 @@ h3 {
     color: #c5c0b7;
     border: 0;
     background: none;
-    font-size: 13px;
+    font-size: calc(13px * var(--interface-scale, 1));
     position: relative
 }
 
@@ -257,6 +259,65 @@ h3 {
     gap: 7px
 }
 
+.interface-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px
+}
+
+.interface-language select {
+    position: relative;
+    z-index: 1;
+    width: 58px;
+    height: 34px;
+    border: 1px solid #49443b;
+    border-radius: 2px;
+    background: transparent;
+    color: #e7dfd1;
+    padding: 0 5px;
+    font-size: calc((11px) * var(--interface-scale, 1))
+}
+
+.interface-language option {
+    color: #171717;
+    background: #fff
+}
+
+.interface-control {
+    position: relative;
+    z-index: 2;
+    min-width: 30px;
+    height: 34px;
+    padding: 0 5px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #d6c59e;
+    font-size: calc((12px) * var(--interface-scale, 1));
+    white-space: nowrap
+}
+
+.interface-control:hover,
+.interface-control:focus-visible {
+    border-color: #64573c;
+    color: #fff
+}
+
+.mobile-nav .interface-controls {
+    display: none
+}
+
+html[lang="ur"] .mobile-nav {
+    direction: rtl
+}
+
+html[lang="ur"] .mobile-nav button {
+    text-align: right
+}
+
+html[lang="ur"] footer {
+    direction: rtl
+}
+
 .menu-btn {
     display: none
 }
@@ -268,7 +329,7 @@ h3 {
 .eyebrow {
     display: none;
     color: var(--gold);
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     font-weight: 700;
     letter-spacing: .22em;
     text-transform: uppercase;
@@ -348,7 +409,7 @@ h3 {
 .hero p {
     font-family: Georgia, serif;
     color: #d2cec5;
-    font-size: 18px;
+    font-size: calc((18px) * var(--interface-scale, 1));
     max-width: 610px;
     line-height: 1.8
 }
@@ -371,7 +432,7 @@ h3 {
     align-items: center;
     justify-content: center;
     gap: 13px;
-    font-size: 12px;
+    font-size: calc((12px) * var(--interface-scale, 1));
     font-weight: 700;
     letter-spacing: .05em;
     transition: .25s
@@ -407,14 +468,14 @@ h3 {
     align-items: center;
     gap: 20px;
     color: #aaa;
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     letter-spacing: .12em;
     text-transform: uppercase
 }
 
 .hero-note span {
     font-family: var(--arabic);
-    font-size: 24px;
+    font-size: calc((24px) * var(--interface-scale, 1));
     color: var(--gold2)
 }
 
@@ -487,13 +548,13 @@ h3 {
 .feature-card b {
     display: block;
     font-family: var(--serif);
-    font-size: 18px
+    font-size: calc((18px) * var(--interface-scale, 1))
 }
 
 .feature-card small {
     display: block;
     color: var(--muted);
-    font-size: 10px;
+    font-size: calc((10px) * var(--interface-scale, 1));
     line-height: 1.4;
     margin-top: 4px
 }
@@ -530,7 +591,7 @@ h3 {
     padding: 0 0 6px;
     color: inherit;
     white-space: nowrap;
-    font-size: 12px;
+    font-size: calc((12px) * var(--interface-scale, 1));
     font-weight: 700
 }
 
@@ -558,7 +619,7 @@ h3 {
 
 .lyric-num {
     font-family: var(--serif);
-    font-size: 24px;
+    font-size: calc((24px) * var(--interface-scale, 1));
     color: #b1a897
 }
 
@@ -567,7 +628,7 @@ h3 {
     color: var(--green);
     background: #eef3ef;
     padding: 4px 8px;
-    font-size: 9px;
+    font-size: calc((9px) * var(--interface-scale, 1));
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase
@@ -575,12 +636,12 @@ h3 {
 
 .lyric-card h3 {
     font-family: var(--serif);
-    font-size: 24px;
+    font-size: calc((24px) * var(--interface-scale, 1));
     margin: 13px 0 8px
 }
 
 .lyric-card p {
-    font-size: 12px;
+    font-size: calc((12px) * var(--interface-scale, 1));
     color: var(--muted);
     margin-bottom: 14px
 }
@@ -590,7 +651,7 @@ h3 {
     gap: 15px;
     flex-wrap: wrap;
     color: #90877c;
-    font-size: 10px
+    font-size: calc((10px) * var(--interface-scale, 1))
 }
 
 .meta span+span:before {
@@ -651,13 +712,13 @@ h3 {
 
 .calligraphy span {
     font-family: var(--arabic);
-    font-size: 90px;
+    font-size: calc((90px) * var(--interface-scale, 1));
     color: var(--gold2)
 }
 
 .calligraphy small {
     letter-spacing: .28em;
-    font-size: 9px
+    font-size: calc((9px) * var(--interface-scale, 1))
 }
 
 .quran-feature h2 {
@@ -684,7 +745,7 @@ h3 {
     justify-content: space-between;
     color: var(--text);
     margin-right: 25px;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .dark-section {
@@ -742,7 +803,7 @@ h3 {
 
 .arch-art span {
     font-family: var(--arabic);
-    font-size: 45px
+    font-size: calc((45px) * var(--interface-scale, 1))
 }
 
 .play-btn,
@@ -770,14 +831,14 @@ h3 {
 
 .audio-info h3 {
     font-family: var(--serif);
-    font-size: 23px;
+    font-size: calc((23px) * var(--interface-scale, 1));
     margin: 10px 0 2px;
     cursor: pointer
 }
 
 .audio-info p {
     color: #aaa;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .featured-chip {
@@ -789,7 +850,7 @@ h3 {
     background: rgba(225, 197, 130, .14);
     color: var(--gold2);
     padding: 5px 9px;
-    font-size: 10px;
+    font-size: calc((10px) * var(--interface-scale, 1));
     letter-spacing: .08em;
     text-transform: uppercase;
     font-weight: 700
@@ -807,7 +868,7 @@ h3 {
     color: var(--green);
     border-radius: 999px;
     padding: 8px 12px;
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     font-weight: 600;
     letter-spacing: .04em;
     text-transform: uppercase;
@@ -827,7 +888,7 @@ h3 {
 
 .player-error {
     margin-top: 8px;
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     color: #a63f2d
 }
 
@@ -835,7 +896,7 @@ h3 {
     position: absolute;
     right: 0;
     top: 24px;
-    font-size: 10px;
+    font-size: calc((10px) * var(--interface-scale, 1));
     color: #9e968b
 }
 
@@ -891,26 +952,26 @@ h3 {
 }
 
 .cover-ornament {
-    font-size: 35px;
+    font-size: calc((35px) * var(--interface-scale, 1));
     color: var(--gold2);
     margin-bottom: 30px
 }
 
 .book-cover small {
-    font-size: 7px;
+    font-size: calc((7px) * var(--interface-scale, 1));
     letter-spacing: .2em
 }
 
 .book-cover b {
     font-family: var(--serif);
-    font-size: 28px;
+    font-size: calc((28px) * var(--interface-scale, 1));
     line-height: 1.2;
     margin: 10px 0
 }
 
 .book-cover i {
     font-family: Georgia, serif;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .book-card>.badge {
@@ -919,12 +980,12 @@ h3 {
 
 .book-card h3 {
     font-family: var(--serif);
-    font-size: 22px;
+    font-size: calc((22px) * var(--interface-scale, 1));
     margin: 9px 0 0
 }
 
 .book-card p {
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     color: var(--muted)
 }
 
@@ -941,7 +1002,7 @@ h3 {
 }
 
 .service-preview h2 {
-    font-size: 56px
+    font-size: calc((56px) * var(--interface-scale, 1))
 }
 
 .service-preview p {
@@ -962,13 +1023,13 @@ h3 {
 }
 
 .service-list span {
-    font-size: 10px;
+    font-size: calc((10px) * var(--interface-scale, 1));
     color: #99886c
 }
 
 .service-list b {
     font-family: var(--serif);
-    font-size: 22px;
+    font-size: calc((22px) * var(--interface-scale, 1));
     font-weight: 400
 }
 
@@ -1105,12 +1166,12 @@ h3 {
 
 .closing .ornament {
     color: var(--gold);
-    font-size: 30px;
+    font-size: calc((30px) * var(--interface-scale, 1));
     margin-bottom: 20px
 }
 
 .closing h2 {
-    font-size: 58px;
+    font-size: calc((58px) * var(--interface-scale, 1));
     margin-bottom: 15px
 }
 
@@ -1132,7 +1193,7 @@ h3 {
 }
 
 .cream-top h1 {
-    font-size: 30px;
+    font-size: calc((30px) * var(--interface-scale, 1));
     font-weight: 700;
     margin-bottom: 15px
 }
@@ -1148,7 +1209,7 @@ h3 {
     /* display: flex;
     align-items: center; */
     gap: 8px;
-    font-size: 10px;
+    font-size: calc((10px) * var(--interface-scale, 1));
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: .08em
@@ -1243,7 +1304,7 @@ h3 {
     border: 1px solid var(--line);
     background: #fff;
     color: var(--text);
-    font-size: 12px;
+    font-size: calc((12px) * var(--interface-scale, 1));
     letter-spacing: .08em;
     text-transform: uppercase;
     line-height: 1;
@@ -1282,7 +1343,7 @@ h3 {
     background: #fff;
     color: var(--text);
     text-align: left;
-    font-size: 13px
+    font-size: calc((13px) * var(--interface-scale, 1))
 }
 
 .lyrics-browse-menu button:last-child {
@@ -1311,7 +1372,7 @@ h3 {
     border: 0;
     background: none;
     padding: 20px 18px 14px;
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     color: var(--muted);
     position: relative
 }
@@ -1345,7 +1406,7 @@ h3 {
     height: 31px;
     border: 1px solid var(--line);
     background: #fff;
-    font-size: 10px
+    font-size: calc((10px) * var(--interface-scale, 1))
 }
 
 .alphabet button:first-child {
@@ -1376,7 +1437,7 @@ h3 {
     color: var(--muted);
     border-radius: 999px;
     padding: 8px 12px;
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     letter-spacing: .08em;
     text-transform: uppercase
 }
@@ -1422,7 +1483,7 @@ h3 {
 }
 
 .library-directory-grid span {
-    font-size: 18px;
+    font-size: calc((18px) * var(--interface-scale, 1));
     font-weight: 700;
     line-height: 1.25
 }
@@ -1484,7 +1545,7 @@ h3 {
 }
 
 .lyric-reading h1 {
-    font-size: 35px;
+    font-size: calc((35px) * var(--interface-scale, 1));
     margin: 20px auto;
     max-width: 700px
 }
@@ -1492,7 +1553,7 @@ h3 {
 .lead {
     font-family: Georgia, serif;
     color: var(--muted);
-    font-size: 17px
+    font-size: calc((17px) * var(--interface-scale, 1))
 }
 
 .detail-meta-row {
@@ -1521,14 +1582,14 @@ h3 {
 .detail-meta-item small {
     display: block;
     color: #9b9287;
-    font-size: 8px;
+    font-size: calc((8px) * var(--interface-scale, 1));
     letter-spacing: .18em;
     margin-bottom: 8px
 }
 
 .detail-meta-item span {
     color: var(--text);
-    font-size: 12px;
+    font-size: calc((12px) * var(--interface-scale, 1));
     line-height: 1.6
 }
 
@@ -1575,7 +1636,7 @@ h3 {
     background: #fff;
     color: var(--text);
     padding: 11px 36px 11px 12px;
-    font-size: 13px;
+    font-size: calc((13px) * var(--interface-scale, 1));
     appearance: none;
     background-image: linear-gradient(45deg, transparent 50%, #666 50%), linear-gradient(135deg, #666 50%, transparent 50%);
     background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 13px) calc(50% - 2px);
@@ -1590,7 +1651,7 @@ h3 {
 .lyric-share-status {
     margin: 10px 0 0;
     color: var(--muted);
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .tag-row {
@@ -1621,7 +1682,7 @@ h3 {
 
 .lyrics-text {
     font-family: Georgia, serif;
-    font-size: 21px;
+    font-size: calc((21px) * var(--interface-scale, 1));
     line-height: 2.25;
     padding: 45px 0
 }
@@ -1629,7 +1690,7 @@ h3 {
 .lyrics-text aside,
 .prototype-note {
     font-family: var(--sans);
-    font-size: 10px;
+    font-size: calc((10px) * var(--interface-scale, 1));
     color: #9b9287;
     background: var(--cream);
     padding: 12px;
@@ -1711,7 +1772,7 @@ h3 {
 }
 
 .page-hero h1 {
-    font-size: 64px;
+    font-size: calc((64px) * var(--interface-scale, 1));
     margin-bottom: 14px
 }
 
@@ -1756,13 +1817,13 @@ h3 {
 
 .browse-cards button>span {
     font-family: var(--serif);
-    font-size: 43px;
+    font-size: calc((43px) * var(--interface-scale, 1));
     color: var(--gold)
 }
 
 .browse-cards b {
     font-family: var(--serif);
-    font-size: 23px;
+    font-size: calc((23px) * var(--interface-scale, 1));
     display: block
 }
 
@@ -1801,7 +1862,7 @@ h3 {
     transform: rotate(45deg);
     display: grid;
     place-items: center;
-    font-size: 9px
+    font-size: calc((9px) * var(--interface-scale, 1))
 }
 
 .surah-no::first-line {
@@ -1810,18 +1871,18 @@ h3 {
 
 .surah-grid b {
     font-family: var(--serif);
-    font-size: 18px
+    font-size: calc((18px) * var(--interface-scale, 1))
 }
 
 .surah-grid small {
     display: block;
     color: var(--muted);
-    font-size: 9px
+    font-size: calc((9px) * var(--interface-scale, 1))
 }
 
 .surah-grid strong {
     font-family: var(--arabic);
-    font-size: 22px;
+    font-size: calc((22px) * var(--interface-scale, 1));
     font-weight: 400
 }
 
@@ -1841,7 +1902,7 @@ h3 {
 
 .surah-header>span {
     font-family: var(--serif);
-    font-size: 38px;
+    font-size: calc((38px) * var(--interface-scale, 1));
     color: var(--gold2)
 }
 
@@ -1851,7 +1912,7 @@ h3 {
 }
 
 .surah-header h1 {
-    font-size: 45px;
+    font-size: calc((45px) * var(--interface-scale, 1));
     margin: 0
 }
 
@@ -1862,7 +1923,7 @@ h3 {
 
 .surah-header strong {
     font-family: var(--arabic);
-    font-size: 52px;
+    font-size: calc((52px) * var(--interface-scale, 1));
     color: var(--gold2);
     font-weight: 400
 }
@@ -1876,7 +1937,7 @@ h3 {
     border: 0;
     background: #fff;
     padding: 10px 17px;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .segmented button.active {
@@ -1901,7 +1962,7 @@ h3 {
     margin-right: auto;
     background: var(--cream);
     padding: 5px 9px;
-    font-size: 10px
+    font-size: calc((10px) * var(--interface-scale, 1))
 }
 
 .ayah-top button {
@@ -1915,7 +1976,7 @@ h3 {
 
 .arabic {
     font-family: var(--arabic);
-    font-size: 44px;
+    font-size: calc((44px) * var(--interface-scale, 1));
     line-height: 2;
     text-align: right;
     margin: 35px 0 15px
@@ -1923,7 +1984,7 @@ h3 {
 
 .translation {
     font-family: Georgia, serif;
-    font-size: 17px;
+    font-size: calc((17px) * var(--interface-scale, 1));
     border-left: 2px solid var(--gold);
     padding-left: 20px
 }
@@ -1949,7 +2010,7 @@ h3 {
 .surah-pager button {
     border: 0;
     background: none;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .para-grid {
@@ -1973,7 +2034,7 @@ h3 {
 
 .para-grid button>span {
     font-family: var(--serif);
-    font-size: 25px;
+    font-size: calc((25px) * var(--interface-scale, 1));
     color: var(--gold)
 }
 
@@ -2006,12 +2067,12 @@ h3 {
 .topic-grid small {
     grid-column: 1/-1;
     color: var(--muted);
-    font-size: 10px
+    font-size: calc((10px) * var(--interface-scale, 1))
 }
 
 .topic-grid b {
     font-family: var(--serif);
-    font-size: 23px
+    font-size: calc((23px) * var(--interface-scale, 1))
 }
 
 .notice {
@@ -2025,7 +2086,7 @@ h3 {
 
 .notice p {
     margin: 5px 0 0;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .audio-detail {
@@ -2043,7 +2104,7 @@ h3 {
 }
 
 .audio-detail h1 {
-    font-size: 57px;
+    font-size: calc((57px) * var(--interface-scale, 1));
     margin: 20px 0 12px
 }
 
@@ -2068,7 +2129,7 @@ h3 {
 }
 
 .player span {
-    font-size: 9px
+    font-size: calc((9px) * var(--interface-scale, 1))
 }
 
 .service-hero {
@@ -2085,7 +2146,7 @@ h3 {
     right: 10%;
     top: 0;
     font-family: var(--arabic);
-    font-size: 350px;
+    font-size: calc((350px) * var(--interface-scale, 1));
     color: #222
 }
 
@@ -2095,7 +2156,7 @@ h3 {
 }
 
 .service-hero h1 {
-    font-size: 70px
+    font-size: calc((70px) * var(--interface-scale, 1))
 }
 
 .service-hero p {
@@ -2118,7 +2179,7 @@ h3 {
 
 .services-grid article>span {
     color: #aaa;
-    font-size: 9px
+    font-size: calc((9px) * var(--interface-scale, 1))
 }
 
 .service-icon {
@@ -2128,11 +2189,11 @@ h3 {
 
 .services-grid h3 {
     font-family: var(--serif);
-    font-size: 21px
+    font-size: calc((21px) * var(--interface-scale, 1))
 }
 
 .services-grid p {
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     color: var(--muted);
     flex: 1
 }
@@ -2194,14 +2255,14 @@ h3 {
 }
 
 .portfolio-grid span {
-    font-size: 8px;
+    font-size: calc((8px) * var(--interface-scale, 1));
     letter-spacing: .16em;
     color: var(--gold2)
 }
 
 .portfolio-grid h3 {
     font-family: var(--serif);
-    font-size: 25px;
+    font-size: calc((25px) * var(--interface-scale, 1));
     margin: 6px 0
 }
 
@@ -2219,7 +2280,7 @@ h3 {
 }
 
 .book-detail h1 {
-    font-size: 56px;
+    font-size: calc((56px) * var(--interface-scale, 1));
     margin: 20px 0 8px
 }
 
@@ -2275,12 +2336,12 @@ h3 {
 }
 
 .document h1 {
-    font-size: 50px;
+    font-size: calc((50px) * var(--interface-scale, 1));
     margin-top: 80px
 }
 
 .doc-ornament {
-    font-size: 50px;
+    font-size: calc((50px) * var(--interface-scale, 1));
     color: var(--gold);
     margin: 50px
 }
@@ -2331,7 +2392,7 @@ h3 {
 }
 
 .about-hero h1 {
-    font-size: 60px
+    font-size: calc((60px) * var(--interface-scale, 1))
 }
 
 .about-hero p {
@@ -2347,7 +2408,7 @@ h3 {
 
 .editorial>div>p {
     font-family: Georgia, serif;
-    font-size: 18px;
+    font-size: calc((18px) * var(--interface-scale, 1));
     color: var(--muted)
 }
 
@@ -2364,17 +2425,17 @@ h3 {
 }
 
 .values span {
-    font-size: 9px;
+    font-size: calc((9px) * var(--interface-scale, 1));
     color: var(--gold)
 }
 
 .values h3 {
     font-family: var(--serif);
-    font-size: 24px
+    font-size: calc((24px) * var(--interface-scale, 1))
 }
 
 .values p {
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     color: var(--muted)
 }
 
@@ -2403,7 +2464,7 @@ h3 {
 }
 
 .contact-grid h2 {
-    font-size: 48px
+    font-size: calc((48px) * var(--interface-scale, 1))
 }
 
 .contact-grid>div>p {
@@ -2424,7 +2485,7 @@ h3 {
 .contact-note small {
     display: block;
     color: var(--muted);
-    font-size: 8px
+    font-size: calc((8px) * var(--interface-scale, 1))
 }
 
 .field {
@@ -2434,7 +2495,7 @@ h3 {
 
 .field>span {
     display: block;
-    font-size: 10px;
+    font-size: calc((10px) * var(--interface-scale, 1));
     font-weight: 700;
     letter-spacing: .08em;
     text-transform: uppercase;
@@ -2464,7 +2525,7 @@ h3 {
 
 .error {
     color: #a63f3f;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .success {
@@ -2480,7 +2541,7 @@ h3 {
 
 .success h3 {
     font-family: var(--serif);
-    font-size: 30px;
+    font-size: calc((30px) * var(--interface-scale, 1));
     margin: 15px
 }
 
@@ -2514,7 +2575,7 @@ h3 {
 }
 
 .auth-panel h1 {
-    font-size: 44px;
+    font-size: calc((44px) * var(--interface-scale, 1));
     line-height: 1.04;
     margin-bottom: 30px
 }
@@ -2555,7 +2616,7 @@ h3 {
 .checkbox {
     display: flex;
     gap: 10px;
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     margin: 8px 0 12px
 }
 
@@ -2567,7 +2628,7 @@ h3 {
     border-top: 1px solid var(--line);
     margin-top: 14px;
     padding-top: 12px;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .auth-switch button {
@@ -2589,7 +2650,7 @@ h3 {
 
 .auth-image blockquote {
     font-family: var(--serif);
-    font-size: 35px;
+    font-size: calc((35px) * var(--interface-scale, 1));
     line-height: 1.12;
     max-width: 500px;
     margin: 0
@@ -2599,7 +2660,7 @@ h3 {
     font-family: var(--sans);
     display: block;
     color: var(--gold2);
-    font-size: 9px;
+    font-size: calc((9px) * var(--interface-scale, 1));
     letter-spacing: .15em;
     margin-top: 20px
 }
@@ -2614,7 +2675,7 @@ h3 {
     }
 
     .auth-panel h1 {
-        font-size: 38px;
+        font-size: calc((38px) * var(--interface-scale, 1));
         line-height: 1.02;
         margin-bottom: 30px
     }
@@ -2646,7 +2707,7 @@ h3 {
     }
 
     .auth-image blockquote {
-        font-size: 30px
+        font-size: calc((30px) * var(--interface-scale, 1))
     }
 }
 
@@ -2669,7 +2730,7 @@ h3 {
 
 .admin aside>small {
     color: #777;
-    font-size: 8px;
+    font-size: calc((8px) * var(--interface-scale, 1));
     letter-spacing: .16em;
     margin: 12px;
     display: block
@@ -2685,7 +2746,7 @@ h3 {
     gap: 10px;
     align-items: center;
     text-align: left;
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     margin: 2px 0
 }
 
@@ -2706,14 +2767,14 @@ h3 {
 }
 
 .admin-main>header small {
-    font-size: 8px;
+    font-size: calc((8px) * var(--interface-scale, 1));
     letter-spacing: .15em;
     color: var(--muted)
 }
 
 .admin-main>header h1 {
     font-family: var(--serif);
-    font-size: 37px;
+    font-size: calc((37px) * var(--interface-scale, 1));
     margin: 4px 0
 }
 
@@ -2725,7 +2786,7 @@ h3 {
     border-radius: 50%;
     display: grid;
     place-items: center;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .stat-grid {
@@ -2742,7 +2803,7 @@ h3 {
 
 .stat-grid span {
     font-family: var(--serif);
-    font-size: 38px;
+    font-size: calc((38px) * var(--interface-scale, 1));
     display: block
 }
 
@@ -2762,7 +2823,7 @@ h3 {
 }
 
 .admin-table h2 {
-    font-size: 28px
+    font-size: calc((28px) * var(--interface-scale, 1))
 }
 
 .admin-table button,
@@ -2775,14 +2836,14 @@ h3 {
     grid-template-columns: 2fr 1fr 1fr 1fr;
     padding: 15px;
     text-align: left;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .table-head {
     border: 0;
     background: #f8f6f1;
     color: var(--muted);
-    font-size: 9px;
+    font-size: calc((9px) * var(--interface-scale, 1));
     text-transform: uppercase
 }
 
@@ -2833,7 +2894,7 @@ h3 {
 }
 
 .form-card h2 {
-    font-size: 26px
+    font-size: calc((26px) * var(--interface-scale, 1))
 }
 
 .compact {
@@ -2849,7 +2910,7 @@ h3 {
 }
 
 .admin-preview h1 {
-    font-size: 55px;
+    font-size: calc((55px) * var(--interface-scale, 1));
     margin-top: 30px
 }
 
@@ -2871,7 +2932,7 @@ footer {
 
 .footer-grid p {
     color: #888;
-    font-size: 12px;
+    font-size: calc((12px) * var(--interface-scale, 1));
     max-width: 320px
 }
 
@@ -2881,12 +2942,12 @@ footer {
     background: none;
     color: #999;
     padding: 5px 0;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .footer-grid h3 {
     font-family: var(--serif);
-    font-size: 20px;
+    font-size: calc((20px) * var(--interface-scale, 1));
     color: var(--gold2)
 }
 
@@ -2929,7 +2990,7 @@ footer {
     display: flex;
     justify-content: space-between;
     color: #777;
-    font-size: 10px
+    font-size: calc((10px) * var(--interface-scale, 1))
 }
 
 .footer-bottom button {
@@ -2955,7 +3016,7 @@ footer {
     border-top: 1px solid var(--line);
     padding-top: 12px;
     color: #9e968b;
-    font-size: 9px
+    font-size: calc((9px) * var(--interface-scale, 1))
 }
 
 .dark-section .media-meta {
@@ -2971,7 +3032,7 @@ footer {
 .book-actions .btn {
     min-height: 38px;
     padding: 8px 10px;
-    font-size: 9px;
+    font-size: calc((9px) * var(--interface-scale, 1));
     flex: 1
 }
 
@@ -2984,7 +3045,7 @@ footer {
 
 .directory-summary span {
     font-family: var(--serif);
-    font-size: 22px
+    font-size: calc((22px) * var(--interface-scale, 1))
 }
 
 .directory-summary small {
@@ -3003,7 +3064,7 @@ footer {
     display: flex;
     align-items: center;
     gap: 9px;
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     color: var(--muted)
 }
 
@@ -3028,7 +3089,7 @@ footer {
     color: var(--muted);
     padding: 16px 18px;
     margin-top: 16px;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .sample-boundary svg {
@@ -3048,13 +3109,13 @@ footer {
 .verified-note {
     display: block;
     color: #6f6f6f;
-    font-size: 9px;
+    font-size: calc((9px) * var(--interface-scale, 1));
     max-width: 260px
 }
 
 .form-help {
     color: var(--muted);
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     margin-bottom: 22px
 }
 
@@ -3104,6 +3165,15 @@ footer {
 
     .header-actions {
         margin-left: auto
+    }
+
+    .header-actions>.interface-controls {
+        display: none
+    }
+
+    .mobile-nav .interface-controls {
+        display: flex;
+        padding: 16px 12px 4px
     }
 
     .feature-grid {
@@ -3156,6 +3226,146 @@ footer {
     }
 }
 
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root {
+    background: #171916;
+    color: #e8e6df
+}
+
+html[data-theme="dark"] .reading-bg,
+html[data-theme="dark"] .section:not(.dark-section),
+html[data-theme="dark"] .lyrics-list,
+html[data-theme="dark"] .quran-tools,
+html[data-theme="dark"] .reader-page,
+html[data-theme="dark"] .contact-section {
+    background-color: #171916;
+    color: #e8e6df
+}
+
+html[data-theme="dark"] .lyric-reading,
+html[data-theme="dark"] .lyric-card,
+html[data-theme="dark"] .browse-cards button,
+html[data-theme="dark"] .surah-grid button,
+html[data-theme="dark"] .form-card,
+html[data-theme="dark"] .auth-panel,
+html[data-theme="dark"] .word-meaning-popover,
+html[data-theme="dark"] .lyrics-search-row,
+html[data-theme="dark"] .translation-drawer {
+    background-color: #222520;
+    color: #e8e6df;
+    border-color: #41443c
+}
+
+html[data-theme="dark"] .auth-page {
+    background-color: #171916
+}
+
+html[data-theme="dark"] .auth-logo {
+    color: #f0eee8
+}
+
+html[data-theme="dark"] .section-head p,
+html[data-theme="dark"] .lead,
+html[data-theme="dark"] .detail-meta-item span,
+html[data-theme="dark"] .lyric-card p,
+html[data-theme="dark"] .browse-cards small,
+html[data-theme="dark"] .surah-grid small,
+html[data-theme="dark"] .word-meaning-popover p b {
+    color: #c5c7bd
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+    background-color: #20221e;
+    color: #f0eee8;
+    border-color: #4a4c44
+}
+
+html[data-theme="dark"] .detail-meta-row,
+html[data-theme="dark"] .detail-meta-item {
+    background-color: #1d201b;
+    border-color: #41443c
+}
+
+.lyrics-text {
+    cursor: text
+}
+
+.lyrics-text:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 4px
+}
+
+.lyric-toolbar-actions>button:first-child {
+    display: none
+}
+
+.word-meaning-popover {
+    position: fixed;
+    z-index: 100;
+    width: min(320px, calc(100vw - 24px));
+    max-height: min(340px, calc(100vh - 24px));
+    overflow: auto;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--text);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, .18);
+    text-align: left
+}
+
+.word-meaning-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+    margin-bottom: 8px
+}
+
+.word-meaning-heading button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: calc((20px) * var(--interface-scale, 1))
+}
+
+.word-meaning-popover p {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 8px 0;
+    font-size: calc((12px) * var(--interface-scale, 1))
+}
+
+.word-meaning-popover p span,
+.word-meaning-popover small {
+    color: var(--muted)
+}
+
+.word-meaning-popover p b {
+    text-align: right;
+    font-weight: 500
+}
+
+.word-meaning-popover[dir="rtl"] p b {
+    text-align: left
+}
+
+@media(max-width:760px) {
+    .word-meaning-popover {
+        left: 12px !important;
+        right: 12px;
+        top: auto !important;
+        bottom: 12px;
+        width: auto;
+        max-height: 55vh
+    }
+}
+
 @media(max-width:760px) {
     .container {
         width: min(100% - 28px, 1180px)
@@ -3176,7 +3386,7 @@ footer {
     }
 
     .logo b {
-        font-size: 16px
+        font-size: calc((16px) * var(--interface-scale, 1))
     }
 
     .login-link {
@@ -3197,11 +3407,11 @@ footer {
     }
 
     .hero h1 {
-        font-size: 49px
+        font-size: calc((49px) * var(--interface-scale, 1))
     }
 
     .hero p {
-        font-size: 15px
+        font-size: calc((15px) * var(--interface-scale, 1))
     }
 
     .hero-note {
@@ -3244,7 +3454,7 @@ footer {
     }
 
     .section-head h2 {
-        font-size: 40px
+        font-size: calc((40px) * var(--interface-scale, 1))
     }
 
     .lyrics-grid,
@@ -3275,7 +3485,7 @@ footer {
     }
 
     .calligraphy span {
-        font-size: 68px
+        font-size: calc((68px) * var(--interface-scale, 1))
     }
 
     .dark-section .audio-grid {
@@ -3302,15 +3512,15 @@ footer {
     }
 
     .book-cover b {
-        font-size: 22px
+        font-size: calc((22px) * var(--interface-scale, 1))
     }
 
     .service-preview h2 {
-        font-size: 44px
+        font-size: calc((44px) * var(--interface-scale, 1))
     }
 
     .closing h2 {
-        font-size: 43px
+        font-size: calc((43px) * var(--interface-scale, 1))
     }
 
     .cream-top {
@@ -3323,7 +3533,7 @@ footer {
 
     .cream-top h1,
     .page-hero h1 {
-        font-size: 45px
+        font-size: calc((45px) * var(--interface-scale, 1))
     }
 
     .directory-controls {
@@ -3344,7 +3554,7 @@ footer {
     }
 
     .lyric-reading h1 {
-        font-size: 40px
+        font-size: calc((40px) * var(--interface-scale, 1))
     }
 
     .detail-meta {
@@ -3358,7 +3568,7 @@ footer {
     }
 
     .lyrics-text {
-        font-size: 18px
+        font-size: calc((18px) * var(--interface-scale, 1))
     }
 
     .quran-nav {
@@ -3382,7 +3592,7 @@ footer {
     }
 
     .arabic {
-        font-size: 36px
+        font-size: calc((36px) * var(--interface-scale, 1))
     }
 
     .ayah {
@@ -3402,7 +3612,7 @@ footer {
 
     .audio-detail h1,
     .book-detail h1 {
-        font-size: 42px
+        font-size: calc((42px) * var(--interface-scale, 1))
     }
 
     .services-grid {
@@ -3414,7 +3624,7 @@ footer {
     }
 
     .service-hero h1 {
-        font-size: 50px
+        font-size: calc((50px) * var(--interface-scale, 1))
     }
 
     .portfolio-grid {
@@ -3444,7 +3654,7 @@ footer {
     }
 
     .about-hero h1 {
-        font-size: 48px
+        font-size: calc((48px) * var(--interface-scale, 1))
     }
 
     .values {
@@ -3533,7 +3743,7 @@ footer {
     }
 
     .document h1 {
-        font-size: 35px;
+        font-size: calc((35px) * var(--interface-scale, 1));
         margin-top: 50px
     }
 
@@ -3580,11 +3790,11 @@ footer {
     }
 
     .media-meta {
-        font-size: 8px
+        font-size: calc((8px) * var(--interface-scale, 1))
     }
 
     .sample-boundary {
-        font-size: 10px
+        font-size: calc((10px) * var(--interface-scale, 1))
     }
 }
 
@@ -3655,7 +3865,7 @@ footer {
     gap: 12px;
     justify-self: start;
     padding: 7px 0;
-    font-size: 15px;
+    font-size: calc((15px) * var(--interface-scale, 1));
     font-weight: 700
 }
 
@@ -3670,7 +3880,7 @@ footer {
     align-items: center;
     gap: 9px;
     color: #65716d;
-    font-size: 13px;
+    font-size: calc((13px) * var(--interface-scale, 1));
     white-space: nowrap
 }
 
@@ -3693,7 +3903,7 @@ footer {
     padding: 0 14px;
     border-radius: 19px;
     color: #66716e;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .reader-modes button.active {
@@ -3724,7 +3934,7 @@ footer {
     padding: 0 12px;
     border: 1px solid #e6eae7;
     border-radius: 19px;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .reader-chapter-card {
@@ -3740,14 +3950,14 @@ footer {
 .reader-chapter-arabic {
     color: var(--green);
     font-family: var(--arabic);
-    font-size: 44px;
+    font-size: calc((44px) * var(--interface-scale, 1));
     font-weight: 400;
     text-align: center
 }
 
 .reader-chapter-copy>span {
     color: var(--green);
-    font-size: 12px;
+    font-size: calc((12px) * var(--interface-scale, 1));
     font-weight: 700
 }
 
@@ -3755,14 +3965,14 @@ footer {
     margin: 3px 0 5px;
     color: #19322c;
     font-family: var(--sans);
-    font-size: 23px;
+    font-size: calc((23px) * var(--interface-scale, 1));
     font-weight: 600;
     line-height: 1.3
 }
 
 .reader-chapter-copy h1 em {
     color: #68746f;
-    font-size: 18px;
+    font-size: calc((18px) * var(--interface-scale, 1));
     font-style: normal;
     font-weight: 400
 }
@@ -3770,7 +3980,7 @@ footer {
 .reader-chapter-copy p {
     margin: 0;
     color: #68746f;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .reader-chapter-actions {
@@ -3788,7 +3998,7 @@ footer {
     border: 1px solid #e1e6e3;
     border-radius: 19px;
     background: #fff;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .reader-chapter-actions button:first-child svg {
@@ -3811,7 +4021,7 @@ footer {
     padding: 14px 18px;
     border-bottom: 1px solid #e8ece9;
     color: #52645d;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .reader-info-panel b {
@@ -3824,7 +4034,7 @@ footer {
     gap: 10px;
     margin: 17px 4px 4px;
     color: #65716d;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .reader-data-note svg {
@@ -3884,14 +4094,14 @@ footer {
 .ayah-reference {
     min-width: 38px;
     color: #7c8984;
-    font-size: 15px
+    font-size: calc((15px) * var(--interface-scale, 1))
 }
 
 .reader-arabic {
     margin: 22px 0 13px;
     color: #152e48;
     font-family: var(--arabic);
-    font-size: 31px;
+    font-size: calc((31px) * var(--interface-scale, 1));
     line-height: 2.05;
     text-align: right
 }
@@ -3899,13 +4109,13 @@ footer {
 .reader-translation-text {
     margin: 8px 0 0;
     color: #223c63;
-    font-size: 19px;
+    font-size: calc((19px) * var(--interface-scale, 1));
     line-height: 1.9
 }
 
 .reader-translation-text.language-ur {
     font-family: var(--urdu), serif;
-    font-size: 20px;
+    font-size: calc((20px) * var(--interface-scale, 1));
     line-height: 2.2
 }
 
@@ -3919,7 +4129,7 @@ footer {
 .ayah-unavailable {
     display: block;
     color: #818d87;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .ayah-unavailable {
@@ -3972,7 +4182,7 @@ footer {
     min-height: 38px;
     padding: 0 10px;
     color: #325b4a;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .reader-surah-pager button:disabled {
@@ -4028,7 +4238,7 @@ footer {
 
 .drawer-heading small {
     color: #74827c;
-    font-size: 9px;
+    font-size: calc((9px) * var(--interface-scale, 1));
     letter-spacing: .08em
 }
 
@@ -4036,7 +4246,7 @@ footer {
     margin: 2px 0 0;
     color: #18362e;
     font-family: var(--sans);
-    font-size: 17px;
+    font-size: calc((17px) * var(--interface-scale, 1));
     font-weight: 600
 }
 
@@ -4067,7 +4277,7 @@ footer {
     border-radius: 18px;
     background: transparent;
     color: #68736f;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .drawer-tabs button.active {
@@ -4094,7 +4304,7 @@ footer {
     border: 0;
     outline: 0;
     color: #213b33;
-    font-size: 13px
+    font-size: calc((13px) * var(--interface-scale, 1))
 }
 
 .drawer-search input:focus-visible {
@@ -4135,25 +4345,25 @@ footer {
 }
 
 .surah-drawer-list button>span {
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .surah-drawer-list button>b {
     overflow: hidden;
-    font-size: 13px;
+    font-size: calc((13px) * var(--interface-scale, 1));
     text-overflow: ellipsis;
     white-space: nowrap
 }
 
 .surah-drawer-list button>small {
     color: #7a8580;
-    font-size: 10px
+    font-size: calc((10px) * var(--interface-scale, 1))
 }
 
 .surah-drawer-list button>strong {
     color: #315b49;
     font-family: var(--arabic);
-    font-size: 19px;
+    font-size: calc((19px) * var(--interface-scale, 1));
     font-weight: 400;
     text-align: right
 }
@@ -4161,7 +4371,7 @@ footer {
 .drawer-empty {
     padding: 18px 6px;
     color: #78847e;
-    font-size: 13px
+    font-size: calc((13px) * var(--interface-scale, 1))
 }
 
 .page-navigation {
@@ -4173,7 +4383,7 @@ footer {
 .page-navigation>p {
     margin: 0 0 16px;
     color: #718079;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .drawer-done {
@@ -4183,7 +4393,7 @@ footer {
     border-radius: 6px;
     background: var(--green);
     color: #fff;
-    font-size: 13px;
+    font-size: calc((13px) * var(--interface-scale, 1));
     font-weight: 600
 }
 
@@ -4253,12 +4463,12 @@ footer {
 
 .verse-surah-list button>span {
     color: #66746d;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .verse-surah-list button>b {
     overflow: hidden;
-    font-size: 13px;
+    font-size: calc((13px) * var(--interface-scale, 1));
     font-weight: 500;
     text-overflow: ellipsis;
     white-space: nowrap
@@ -4275,14 +4485,14 @@ footer {
     border-bottom: 1px solid #e8ece9;
     color: #344d42;
     font-family: var(--sans);
-    font-size: 13px;
+    font-size: calc((13px) * var(--interface-scale, 1));
     font-weight: 600
 }
 
 .verse-ayah-column h3 small {
     overflow: hidden;
     color: #7b8781;
-    font-size: 10px;
+    font-size: calc((10px) * var(--interface-scale, 1));
     font-weight: 400;
     text-overflow: ellipsis;
     white-space: nowrap
@@ -4302,7 +4512,7 @@ footer {
     border-radius: 7px;
     background: transparent;
     color: #3e5149;
-    font-size: 13px;
+    font-size: calc((13px) * var(--interface-scale, 1));
     text-align: left
 }
 
@@ -4337,7 +4547,7 @@ footer {
 
 .juz-drawer-list button>span,
 .page-navigation button>span {
-    font-size: 13px;
+    font-size: calc((13px) * var(--interface-scale, 1));
     font-weight: 600
 }
 
@@ -4345,7 +4555,7 @@ footer {
 .page-navigation button>small {
     grid-column: 1;
     color: #78847f;
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .juz-drawer-list button>svg,
@@ -4357,7 +4567,7 @@ footer {
 .page-navigation h3 {
     margin: 2px 0 7px;
     color: #233d34;
-    font-size: 14px
+    font-size: calc((14px) * var(--interface-scale, 1))
 }
 
 .translation-options {
@@ -4367,7 +4577,7 @@ footer {
 .translation-options section h3 {
     margin: 14px 0 6px;
     color: #1f382f;
-    font-size: 14px
+    font-size: calc((14px) * var(--interface-scale, 1))
 }
 
 .translation-option {
@@ -4394,19 +4604,19 @@ footer {
 
 .translation-option b {
     color: #263e35;
-    font-size: 13px;
+    font-size: calc((13px) * var(--interface-scale, 1));
     font-weight: 500
 }
 
 .translation-option small {
     color: #7b8781;
-    font-size: 10px
+    font-size: calc((10px) * var(--interface-scale, 1))
 }
 
 .translation-option .translation-check {
     margin-left: auto;
     color: var(--green);
-    font-size: 10px
+    font-size: calc((10px) * var(--interface-scale, 1))
 }
 
 .drawer-done {
@@ -4428,7 +4638,7 @@ footer {
     background: #fff;
     box-shadow: 0 8px 30px #11271e1c;
     color: #314c40;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .reader-notice button {
@@ -4461,7 +4671,7 @@ footer {
     background: #fff;
     box-shadow: 0 8px 28px #182c241c;
     color: #203b32;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .auth-pending-notice>div {
@@ -4476,7 +4686,7 @@ footer {
     border: 1px solid var(--line);
     background: #fff;
     color: var(--text);
-    font-size: 11px
+    font-size: calc((11px) * var(--interface-scale, 1))
 }
 
 .auth-pending-notice button:first-child {
@@ -4523,13 +4733,13 @@ footer {
 
 .quran-bottom-player b {
     color: #203b32;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .quran-bottom-player small,
 .quran-player-time {
     color: #7b8781;
-    font-size: 10px
+    font-size: calc((10px) * var(--interface-scale, 1))
 }
 
 .quran-bottom-player button {
@@ -4588,12 +4798,12 @@ footer {
 }
 
 .shared-player-meta b {
-    font-size: 14px;
+    font-size: calc((14px) * var(--interface-scale, 1));
     color: #fff
 }
 
 .shared-player-meta small {
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     color: rgba(255, 255, 255, .72)
 }
 
@@ -4632,7 +4842,7 @@ footer {
 }
 
 .shared-player-controls span {
-    font-size: 11px;
+    font-size: calc((11px) * var(--interface-scale, 1));
     color: rgba(255, 255, 255, .8)
 }
 
@@ -4712,7 +4922,7 @@ footer {
     .reader-current-surah {
         max-width: 56vw;
         overflow: hidden;
-        font-size: 13px;
+        font-size: calc((13px) * var(--interface-scale, 1));
         text-overflow: ellipsis;
         white-space: nowrap
     }
@@ -4720,7 +4930,7 @@ footer {
     .reader-modes button {
         min-height: 32px;
         padding: 0 9px;
-        font-size: 10px
+        font-size: calc((10px) * var(--interface-scale, 1))
     }
 
     .quran-reader-body {
@@ -4736,7 +4946,7 @@ footer {
     .reader-translation-open {
         min-height: 35px;
         padding: 0 9px;
-        font-size: 11px
+        font-size: calc((11px) * var(--interface-scale, 1))
     }
 
     .reader-chapter-card {
@@ -4746,19 +4956,19 @@ footer {
     }
 
     .reader-chapter-arabic {
-        font-size: 34px
+        font-size: calc((34px) * var(--interface-scale, 1))
     }
 
     .reader-chapter-copy h1 {
-        font-size: 18px
+        font-size: calc((18px) * var(--interface-scale, 1))
     }
 
     .reader-chapter-copy h1 em {
-        font-size: 14px
+        font-size: calc((14px) * var(--interface-scale, 1))
     }
 
     .reader-chapter-copy p {
-        font-size: 10px
+        font-size: calc((10px) * var(--interface-scale, 1))
     }
 
     .reader-chapter-actions {
@@ -4776,12 +4986,12 @@ footer {
 
     .reader-arabic {
         margin-top: 17px;
-        font-size: 28px;
+        font-size: calc((28px) * var(--interface-scale, 1));
         line-height: 1.95
     }
 
     .reader-translation-text {
-        font-size: 17px
+        font-size: calc((17px) * var(--interface-scale, 1))
     }
 
     .quran-drawer {
@@ -4815,7 +5025,7 @@ footer {
 
     .verse-surah-list button>b,
     .verse-ayah-list button {
-        font-size: 12px
+        font-size: calc((12px) * var(--interface-scale, 1))
     }
 
     .verse-ayah-list button {
@@ -4851,7 +5061,7 @@ footer {
 
     .quran-player-track b {
         overflow: hidden;
-        font-size: 10px;
+        font-size: calc((10px) * var(--interface-scale, 1));
         text-overflow: ellipsis;
         white-space: nowrap
     }
@@ -4943,7 +5153,7 @@ footer {
     justify-content: space-between;
     gap: 15px;
     color: rgba(255, 255, 255, .72);
-    font-size: 9px;
+    font-size: calc((9px) * var(--interface-scale, 1));
     letter-spacing: .08em;
     text-transform: uppercase
 }
@@ -4960,7 +5170,7 @@ footer {
 
 .editorial-lyric h3 {
     font-family: var(--serif);
-    font-size: clamp(1.75rem, 2.5vw, 2.55rem);
+    font-size: calc((clamp(1.75rem, 2.5vw, 2.55rem)) * var(--interface-scale, 1));
     line-height: 1.08;
     margin: 0 0 16px;
     color: #fff;
@@ -4970,12 +5180,12 @@ footer {
 .editorial-lyric p {
     margin: 0 0 4px;
     color: #fff;
-    font-size: 12px
+    font-size: calc((12px) * var(--interface-scale, 1))
 }
 
 .editorial-lyric small {
     color: rgba(255, 255, 255, .68);
-    font-size: 10px
+    font-size: calc((10px) * var(--interface-scale, 1))
 }
 
 .editorial-action {
@@ -4988,7 +5198,7 @@ footer {
     background: none;
     border: 0;
     border-bottom: 1px solid rgba(225, 197, 130, .65);
-    font-size: 10px;
+    font-size: calc((10px) * var(--interface-scale, 1));
     font-weight: 700;
     letter-spacing: .06em;
     text-transform: uppercase
@@ -5100,7 +5310,7 @@ footer {
     top: 14px;
     z-index: 2;
     color: #fff !important;
-    font-size: 9px
+    font-size: calc((9px) * var(--interface-scale, 1))
 }
 
 .service-card-body {
@@ -5162,7 +5372,7 @@ footer {
     }
 
     .editorial-lyric h3 {
-        font-size: 30px
+        font-size: calc((30px) * var(--interface-scale, 1))
     }
 
     .feature-grid>.card-reveal {
