@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, Outlet, Route as RouterRoute, Routes, useLocation, useNavigate } from "react-router-dom";
 import { InterfaceLanguageContext, interfaceAttributeText, LocalizedText, useInterfaceLanguage, useInterfaceText } from "./app/providers/interfaceLanguage";
 import { photos } from "./app/config/media";
@@ -14,7 +14,6 @@ import { ServicesPage } from "./features/services-page/pages/ServicesPage";
 import { AboutPage } from "./features/about/pages/AboutPage";
 import { ContactPage } from "./features/contact/pages/ContactPage";
 import { AuthPage } from "./features/auth/pages/AuthPage";
-import { AdminContentPage } from "./features/admin/pages/AdminContentPage";
 import { AudioPage, AudioDetail } from "./features/audio/pages/AudioPages";
 import { Ebooks, BookDetail, BookReader } from "./features/ebooks/pages/EbookPages";
 import { AudioCard, getAudioCategoryLabel } from "./features/audio/components/AudioCard";
@@ -33,6 +32,7 @@ import { useContentCollection } from "./app/hooks/useContentCollection";
 import { audioCategories, audioLibrary, filterAudioLibrary, getAudioById } from "./audioData";
 import { ebookCategories, ebookLibrary, filterEbooks, getEbookById } from "./bookData";
 import { clearPendingAction, createPendingAction, readPendingAction, savePendingAction, safeReturnTo } from "./authActions.js";
+import { adminAuth } from "./features/auth/services/adminAuth.js";
 import { FONT_SCALE_KEY, GLOBAL_LANGUAGE_KEY, THEME_KEY, readPreference, translateInterface } from "./interfacePreferences";
 import { lookupWordMeanings } from "./wordMeaningService";
 import { surahData } from "./features/quran/data/surahMetadata";
@@ -55,6 +55,9 @@ import {
 } from "./lyricsData";
 
 type Route = string;
+
+const AdminContentPage = lazy(() => import("./features/admin/pages/AdminContentPage").then((module) => ({ default: module.AdminContentPage })));
+const LyricDocumentView = lazy(() => import("./features/lyrics/components/LyricRichText").then((module) => ({ default: module.LyricDocumentView })));
 
 function PublicLayout({ route, go, language, setLanguage, theme, setTheme, fontScale, setFontScale }: { route: Route; go: (r: Route) => void; language: string; setLanguage: (value: string) => void; theme: string; setTheme: (value: string) => void; fontScale: number; setFontScale: (value: number) => void }) {
   return <>
@@ -327,7 +330,46 @@ function LyricDetail({ go }: { go: (r: Route) => void }) {
   const lyricSpotifyIds = new Set((lyric.relatedAudio || []).map((audio: { url: string }) => getSpotifyTrackId(audio.url)).filter(Boolean));
   const suggestedSpotifyTracks = spotifyTrackReferences.filter((track) => !lyricSpotifyIds.has(getSpotifyTrackId(track.url)));
 
-  return <main className="reading-bg"><div className="container narrow"><Breadcrumbs items={["Lyrics", lyric.title]} go={go} /><article className="lyric-reading lyric-detail-page"><span className="badge">{getLyricCategoryNames(lyric).map(t).join(" • ") || t("Devotional")}</span><h1>{lyric.title}</h1>{lyric.tags?.[0] ? <p className="lead">{lyric.tags[0]} <LocalizedText text={"and remembrance"} /></p> : null}<div className="lyric-toolbar"><div className="lyric-toolbar-left"><label className="lang-select"><span className="sr-only"><LocalizedText text={"Select language"} /></span><select aria-label={interfaceAttributeText("Select lyric language")} value={selectedLanguage} onChange={(event) => setSelectedLanguage(event.target.value)}>{lyric.languageVersions.map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}</select></label></div><div className="lyric-toolbar-actions"><Btn variant="outline" icon="share" onClick={() => void share()}><LocalizedText text={"Share"} /></Btn></div></div>{shareMessage && <div className="lyric-share-status"><LocalizedText text={shareMessage} /></div>}{lyric.tags?.length ? <div className="tag-row">{lyric.tags.map((tag) => <span key={tag} className="badge soft-badge">#{tag}</span>)}</div> : null}<div className="lyrics-text" lang={version.code} dir={version.dir || "ltr"}><p className="lyrics-content">{version.text.split("\n").map((line, index) => <span key={`${version.code}-${index}`}><span>{line}</span>{index < version.text.split("\n").length - 1 ? <br /> : null}</span>)}</p>{lyric.tags?.length ? <aside><LocalizedText text={"Keywords:"} trailing=" " />{lyric.tags.join(" • ")}</aside> : null}</div><div className="detail-meta-row">{metadataFields.map(([label, value]) => <div key={label} className="detail-meta-item"><small>{t(label)}</small><span>{value}</span></div>)}</div></article>{lyric.relatedAudio?.length ? <section className="related"><SectionHead title={interfaceAttributeText("Related Audio")} action="Back to Lyrics" onAction={() => go("lyrics")} /><div className="audio-grid light">{lyric.relatedAudio.map((item) => <article className="audio-card reveal" key={item.title}><div className="audio-art green"><div className="arch-art"><span>ذِكْر</span></div><button className="play-btn" aria-label={`Play ${item.title}`} onClick={() => window.open(item.url, "_blank", "noopener")}><Icon name="play" /></button></div><div className="audio-info"><span className="badge"><LocalizedText text={"Audio"} /></span><h3>{item.title}</h3><p><LocalizedText text={"Related to"} trailing=" " />{lyric.title}</p><div className="media-meta"><span><LocalizedText text={"Link"} /></span><span><LocalizedText text={"Available"} /></span></div></div></article>)}</div></section> : null}<section className="related"><SectionHead title={interfaceAttributeText("Related Videos")} /><YouTubeVideoGrid videos={suggestedVideos.map((video, index) => ({ id: `${lyric.id}-video-${index}`, title: video.title || "YouTube video reference", url: video.url }))} /></section><section className="related"><SectionHead title={interfaceAttributeText("Suggested Audio")} /><SpotifyTrackGrid tracks={suggestedSpotifyTracks} /></section><section className="related"><SectionHead title={interfaceAttributeText("Related Lyrics")} action="Read All Lyrics" onAction={() => go("lyrics")} /><div className="lyrics-grid">{relatedLyrics.map((item, index) => <LyricsCard item={item} index={index} key={item.id} onClick={() => go(`lyric-detail?id=${item.id}`)} />)}</div></section></div></main>;
+  return <main className="reading-bg">
+    <div className="container narrow">
+      <Breadcrumbs items={["Lyrics", lyric.title]} go={go} />
+      <article className="lyric-reading lyric-detail-page">
+        <span className="badge">{getLyricCategoryNames(lyric).map(t).join(" • ") || t("Devotional")}</span>
+        <h1>{lyric.title}</h1>
+        {lyric.tags?.[0] ? <p className="lead">{lyric.tags[0]} <LocalizedText text={"and remembrance"} /></p> : null}
+        <div className="lyric-toolbar">
+          <div className="lyric-toolbar-left">
+            <label className="lang-select">
+              <span className="sr-only"><LocalizedText text={"Select language"} /></span>
+              <select aria-label={interfaceAttributeText("Select lyric language")} value={selectedLanguage} onChange={(event) => setSelectedLanguage(event.target.value)}>
+                {lyric.languageVersions.map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="lyric-toolbar-actions"><Btn variant="outline" icon="share" onClick={() => void share()}><LocalizedText text={"Share"} /></Btn></div>
+        </div>
+        {shareMessage && <div className="lyric-share-status"><LocalizedText text={shareMessage} /></div>}
+        {lyric.tags?.length ? <div className="tag-row">{lyric.tags.map((tag) => <span key={tag} className="badge soft-badge">#{tag}</span>)}</div> : null}
+        <div className="lyrics-text" lang={version.code} dir={version.dir || "ltr"}>
+          {version.document
+            ? <Suspense fallback={<p className="lyrics-content">{version.text}</p>}><LyricDocumentView document={version.document} language={version.code} dir={version.dir || "ltr"} className="lyrics-content" /></Suspense>
+            : <p className="lyrics-content">{version.text.split("\n").map((line, index) => <span key={`${version.code}-${index}`}><span>{line}</span>{index < version.text.split("\n").length - 1 ? <br /> : null}</span>)}</p>}
+          {lyric.tags?.length ? <aside><LocalizedText text={"Keywords:"} trailing=" " />{lyric.tags.join(" • ")}</aside> : null}
+        </div>
+        <div className="detail-meta-row">{metadataFields.map(([label, value]) => <div key={label} className="detail-meta-item"><small>{t(label)}</small><span>{value}</span></div>)}</div>
+      </article>
+      {lyric.relatedAudio?.length ? <section className="related">
+        <SectionHead title={interfaceAttributeText("Related Audio")} action="Back to Lyrics" onAction={() => go("lyrics")} />
+        <div className="audio-grid light">{lyric.relatedAudio.map((item) => <article className="audio-card reveal" key={item.title}>
+          <div className="audio-art green"><div className="arch-art"><span>ذِكْر</span></div><button className="play-btn" aria-label={`Play ${item.title}`} onClick={() => window.open(item.url, "_blank", "noopener")}><Icon name="play" /></button></div>
+          <div className="audio-info"><span className="badge"><LocalizedText text={"Audio"} /></span><h3>{item.title}</h3><p><LocalizedText text={"Related to"} trailing=" " />{lyric.title}</p><div className="media-meta"><span><LocalizedText text={"Link"} /></span><span><LocalizedText text={"Available"} /></span></div></div>
+        </article>)}</div>
+      </section> : null}
+      <section className="related"><SectionHead title={interfaceAttributeText("Related Videos")} /><YouTubeVideoGrid videos={suggestedVideos.map((video, index) => ({ id: `${lyric.id}-video-${index}`, title: video.title || "YouTube video reference", url: video.url }))} /></section>
+      <section className="related"><SectionHead title={interfaceAttributeText("Suggested Audio")} /><SpotifyTrackGrid tracks={suggestedSpotifyTracks} /></section>
+      <section className="related"><SectionHead title={interfaceAttributeText("Related Lyrics")} action="Read All Lyrics" onAction={() => go("lyrics")} /><div className="lyrics-grid">{relatedLyrics.map((item, index) => <LyricsCard item={item} index={index} key={item.id} onClick={() => go(`lyric-detail?id=${item.id}`)} />)}</div></section>
+    </div>
+  </main>;
 }
 
 export default function App() {
@@ -344,7 +386,7 @@ export default function App() {
     const saved = Number(readPreference(FONT_SCALE_KEY, "1"));
     return Number.isFinite(saved) ? Math.max(0.9, Math.min(1.2, saved)) : 1;
   });
-  const [isLoggedIn, setIsLoggedIn] = useState(() => window.localStorage.getItem("zikr-authenticated") === "true");
+  const [isLoggedIn, setIsLoggedIn] = useState(() => adminAuth.hasAdminSession());
   const [activeAudioId, setActiveAudioId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState(() => readPendingAction());
 
@@ -360,7 +402,7 @@ export default function App() {
   }, [fontScale, language, theme]);
 
   useEffect(() => {
-    const syncAuth = () => setIsLoggedIn(window.localStorage.getItem("zikr-authenticated") === "true");
+    const syncAuth = () => setIsLoggedIn(adminAuth.hasAdminSession());
     const handleSelectAudio = (event: Event) => {
       const detail = (event as CustomEvent<{ id?: string }>).detail;
       if (detail?.id) setActiveAudioId(detail.id);
@@ -500,6 +542,14 @@ export default function App() {
     if (!opened) window.alert(translateInterface(language, "The browser blocked the download window. Allow pop-ups and retry."));
   };
 
+  const handleLogout = async () => {
+    try { await adminAuth.logout(); } catch { /* session is always cleared locally */ }
+    // Remove any stale demo flag so it cannot grant access after logout
+    try { window.localStorage.removeItem("zikr-authenticated"); } catch { /* ignore */ }
+    setIsLoggedIn(false);
+    go("home");
+  };
+
   const headerRoute = lyricsRoutePaths.includes(routePath) ? "lyrics" : routePath;
   return <InterfaceLanguageContext.Provider value={language}><div className="app-shell" data-theme={theme}>
     {isLoggedIn && pendingAction && !["login", "register"].includes(routePath) && <PendingActionNotice pendingAction={pendingAction} action={pendingAction.action} onContinue={resumePendingAction} onDismiss={dismissPendingAction} />}
@@ -532,8 +582,8 @@ export default function App() {
       <RouterRoute element={<BareLayout />}>
         <RouterRoute path="login" element={<AuthPage mode="login" go={go} />} />
         <RouterRoute path="register" element={<AuthPage mode="register" go={go} />} />
-        <RouterRoute path="admin" element={<AdminContentPage go={go} isLoggedIn={isLoggedIn} />} />
-        <RouterRoute path="admin-edit" element={<AdminContentPage edit go={go} isLoggedIn={isLoggedIn} />} />
+        <RouterRoute path="admin" element={<Suspense fallback={<main className="admin-access" role="status">Loading content admin…</main>}><AdminContentPage go={go} isLoggedIn={isLoggedIn} onLogout={handleLogout} /></Suspense>} />
+        <RouterRoute path="admin-edit" element={<Suspense fallback={<main className="admin-access" role="status">Loading content admin…</main>}><AdminContentPage edit go={go} isLoggedIn={isLoggedIn} onLogout={handleLogout} /></Suspense>} />
         <RouterRoute path="book-reader" element={<BookReader go={go} />} />
       </RouterRoute>
     </Routes>

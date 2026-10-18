@@ -19,3 +19,17 @@ logs/
 # beside it.
 /.plugins/
 /.opencode-skills/
+
+# -- Java / Maven backend -------------------------------------------------
+backend/target/
+backend/*.jar
+backend/*.war
+backend/src/main/resources/application-prod.properties
+*.class
+
+# ── Java / Maven backend ─────────────────────────────────────────────────────
+backend/target/
+backend/*.jar
+backend/*.war
+backend/src/main/resources/application-prod.properties
+*.class

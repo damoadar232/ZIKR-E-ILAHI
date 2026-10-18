@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useContentCollection } from "../../../app/hooks/useContentCollection";
 import { interfaceAttributeText, LocalizedText, useInterfaceText } from "../../../app/providers/interfaceLanguage";
 import { getRouteQueryParam } from "../../../app/utils/getRouteQueryParam";
 import { Icon } from "../../../components/ui";
 import { SectionHead } from "../../../components/common/SectionHead";
 import { CategoryBrowseControl, DirectoryHeader, PageHero, SearchBox } from "../../../components/common/PagePrimitives";
-import { audioSources, ayahAudioSources, juzStarts, mushafPageStarts, quranAyahRecords, surahMeanings, translationResources, type TranslationLanguage } from "../data/quranData";
+import { audioSources, ayahAudioSources, juzStarts, mushafPageStarts, surahMeanings, translationResources, type TranslationLanguage } from "../data/quranData";
 import { surahData, surahs } from "../data/surahMetadata";
 import { QURAN_BOOKMARKS_UPDATED_EVENT, readQuranBookmarks, writeQuranBookmarks } from "../services/quranBookmarks";
+import { useQuranSurahs } from "../hooks/useQuranSurahs";
+import { useQuranSurahAyahs } from "../hooks/useQuranSurahAyahs";
 
 type Route = string;
 const quranBrowseItems = [
@@ -83,13 +84,14 @@ function QuranSearchAndBrowse({ search, setSearch, activeCategory, onSelectCateg
 
 export function QuranHome({ go }: { go: (r: Route) => void }) {
   const [search, setSearch] = useState("");
-  const filteredSurahs = filterQuranSurahs(surahs, search).slice(0, 6);
+  const { items: allSurahs } = useQuranSurahs();
+  const filteredSurahs = filterQuranSurahs(allSurahs, search).slice(0, 6);
   const handleBrowseSelect = (item: (typeof quranBrowseItems)[number]) => {
     setSearch("");
     go(quranBrowseMap[item]);
   };
 
-  return <main><PageHero eyebrow="THE HOLY QURAN" title={interfaceAttributeText("Read. Reflect. Return.")} text="A calm and respectful space to explore the Quran, Surah by Surah."><QuranSearchAndBrowse search={search} setSearch={setSearch} activeCategory="Quran Home" onSelectCategory={handleBrowseSelect} /></PageHero><section className="section container"><div className="browse-cards"><button onClick={() => go("surahs")}><span>114</span><div><b><LocalizedText text={"Browse by Surah"} /></b><small><LocalizedText text={"Explore every chapter in order"} /></small></div><Icon name="arrow" /></button><button onClick={() => go("para")}><span>30</span><div><b><LocalizedText text={"Browse by Para"} /></b><small><LocalizedText text={"Read by Juz division"} /></small></div><Icon name="arrow" /></button></div><SectionHead eyebrow="Continue Exploring" title={interfaceAttributeText("Surahs of the Quran")} action="View all 114 Surahs" onAction={() => go("surahs")} /><SurahGrid go={go} items={search.trim() ? filteredSurahs : surahs.slice(0, 6)} /></section></main>;
+  return <main><PageHero eyebrow="THE HOLY QURAN" title={interfaceAttributeText("Read. Reflect. Return.")} text="A calm and respectful space to explore the Quran, Surah by Surah."><QuranSearchAndBrowse search={search} setSearch={setSearch} activeCategory="Quran Home" onSelectCategory={handleBrowseSelect} /></PageHero><section className="section container"><div className="browse-cards"><button onClick={() => go("surahs")}><span>114</span><div><b><LocalizedText text={"Browse by Surah"} /></b><small><LocalizedText text={"Explore every chapter in order"} /></small></div><Icon name="arrow" /></button><button onClick={() => go("para")}><span>30</span><div><b><LocalizedText text={"Browse by Para"} /></b><small><LocalizedText text={"Read by Juz division"} /></small></div><Icon name="arrow" /></button></div><SectionHead eyebrow="Continue Exploring" title={interfaceAttributeText("Surahs of the Quran")} action="View all 114 Surahs" onAction={() => go("surahs")} /><SurahGrid go={go} items={search.trim() ? filteredSurahs : allSurahs.slice(0, 6)} /></section></main>;
 }
 
 function SurahGrid({ go, items = surahs }: { go: (r: Route) => void; items?: string[][] }) {
@@ -99,13 +101,26 @@ function SurahGrid({ go, items = surahs }: { go: (r: Route) => void; items?: str
 
 export function SurahDirectory({ go }: { go: (r: Route) => void }) {
   const [search, setSearch] = useState("");
-  const shown = filterQuranSurahs(surahs, search);
+  const [revelationFilter, setRevelationFilter] = useState<"Makki" | "Madani" | undefined>(undefined);
+  const { items: surahItems, loading } = useQuranSurahs(revelationFilter);
+  const shown = filterQuranSurahs(surahItems, search);
   const handleBrowseSelect = (item: (typeof quranBrowseItems)[number]) => {
     setSearch("");
+    if (item === "Makki / Madani") {
+      // Toggle through: none → Makki → Madani → none
+      setRevelationFilter(prev => prev === undefined ? "Makki" : prev === "Makki" ? "Madani" : undefined);
+      return;
+    }
+    setRevelationFilter(undefined);
     go(quranBrowseMap[item]);
   };
+  const activeCategory: (typeof quranBrowseItems)[number] =
+    revelationFilter ? "Makki / Madani" : "Surah Directory";
+  const summaryLabel = revelationFilter
+    ? `${shown.length} ${revelationFilter} Surahs`
+    : `${shown.length}`;
 
-  return <main><DirectoryHeader go={go} title={interfaceAttributeText("Surah Directory")} text="Browse all 114 Surahs of the Holy Quran in their established order." /><QuranSearchAndBrowse search={search} setSearch={setSearch} activeCategory="Surah Directory" onSelectCategory={handleBrowseSelect} /><section className="section container"><div className="directory-summary"><span>{shown.length} <LocalizedText text={"Surahs"} /></span><small><LocalizedText text={"Ordered from Al-Fatihah to An-Nas"} /></small></div><SurahGrid go={go} items={shown} /></section></main>;
+  return <main><DirectoryHeader go={go} title={interfaceAttributeText("Surah Directory")} text="Browse all 114 Surahs of the Holy Quran in their established order." /><QuranSearchAndBrowse search={search} setSearch={setSearch} activeCategory={activeCategory} onSelectCategory={handleBrowseSelect} />{revelationFilter && <div className="container"><div className="revelation-filter-bar"><span className="badge">{revelationFilter}</span><button className="clear-filter-btn" onClick={() => setRevelationFilter(undefined)}><LocalizedText text={"Clear filter"} /></button></div></div>}<section className="section container"><div className="directory-summary"><span>{loading ? <LocalizedText text={"Loading…"} /> : <>{summaryLabel} <LocalizedText text={"Surahs"} /></>}</span><small><LocalizedText text={"Ordered from Al-Fatihah to An-Nas"} /></small></div><SurahGrid go={go} items={shown} /></section></main>;
 }
 
 export function SurahRead({ go, isLoggedIn, onRequireAuthentication }: { go: (r: Route) => void; isLoggedIn: boolean; onRequireAuthentication: (action: string, contentType: string, contentId: string) => boolean }) {
@@ -137,7 +152,6 @@ export function SurahRead({ go, isLoggedIn, onRequireAuthentication }: { go: (r:
   const [infoOpen, setInfoOpen] = useState(false);
   const [highlightedAyah, setHighlightedAyah] = useState(0);
   const [notice, setNotice] = useState("");
-  const managedAyahs = useContentCollection("quranAyahs", quranAyahRecords);
   const [bookmarks, setBookmarks] = useState<number[]>(() => {
     try { return readQuranBookmarks(); }
     catch { return []; }
@@ -156,9 +170,7 @@ export function SurahRead({ go, isLoggedIn, onRequireAuthentication }: { go: (r:
   const chapter = surahData[surahNumber - 1];
   const chapterNumber = surahNumber;
   const [arabicName, transliteratedName, ayahCount, revelation] = chapter;
-  const chapterContent = Object.fromEntries(managedAyahs
-    .filter((record) => record.status === "published" && record.surahNumber === chapterNumber)
-    .map((record) => [record.ayahNumber, { arabic: record.arabic, translations: record.translations }])) as Record<number, { arabic: string; translations: Partial<Record<TranslationLanguage, string>> }>;
+  const { chapterContent } = useQuranSurahAyahs(chapterNumber, selectedTranslation);
   const filteredSurahs = surahData.map((item, index) => ({ item, number: index + 1 })).filter(({ item, number }) => `${number} ${item[0]} ${item[1]} ${surahMeanings[number - 1]}`.toLowerCase().includes(surahSearch.toLowerCase()));
   const filteredTranslations = translationResources.filter(resource => `${resource.language} ${resource.name} ${resource.attribution}`.toLowerCase().includes(translationSearch.toLowerCase()));
   const activeJuz = [...juzStarts].reverse().find(start => chapterNumber > start.surah || (chapterNumber === start.surah && ayahNumber >= start.ayah))?.juz || 1;

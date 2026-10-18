@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=DM+Sans:wght@400;500;600;700&family=Italiana&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=DM+Sans:wght@400;500;600;700&family=Italiana&family=Noto+Nastaliq+Urdu:wght@400;600&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 :root {
@@ -975,6 +975,206 @@ html[lang="ur"] footer {
     font-size: calc((11px) * var(--interface-scale, 1));
     color: var(--muted)
 }
+
+/* ─── Home-page marquee animations ───────────────────────────────────────── */
+
+/*
+ * Card-width custom properties.
+ * The viewport wrapper is sized to show exactly 6 cards at desktop,
+ * fewer at smaller breakpoints. The track itself is unrestricted so
+ * all cards (original + clone) sit in one continuous flex row.
+ *
+ * Audio card:  --audio-card-w  /  --audio-gap
+ * E-Book card: --ebook-card-w  /  --ebook-gap
+ *
+ * Visible-viewport width = (N × card-w) + ((N − 1) × gap)
+ */
+
+/* Desktop: 6 cards visible */
+.home-audio-marquee {
+    --audio-card-w: 300px;
+    --audio-gap: 20px;
+    --audio-visible: 6
+}
+
+.home-ebooks-marquee {
+    --ebook-card-w: 240px;
+    --ebook-gap: 20px;
+    --ebook-visible: 6
+}
+
+@keyframes marquee-rtl {
+    from {
+        transform: translateX(0)
+    }
+
+    to {
+        transform: translateX(-50%)
+    }
+}
+
+@keyframes marquee-ltr {
+    from {
+        transform: translateX(-50%)
+    }
+
+    to {
+        transform: translateX(0)
+    }
+}
+
+/* ── Viewport wrapper ── */
+.home-audio-marquee,
+.home-ebooks-marquee {
+    overflow: hidden;
+    /* clip to exactly N visible cards */
+    max-width: 100%
+}
+
+.home-audio-marquee {
+    /*
+     * 6 cards × 300px + 5 gaps × 20px = 1900px.
+     * Clamped to 100% so it never breaks out of the section.
+     */
+    width: calc(var(--audio-visible) * var(--audio-card-w) + (var(--audio-visible) - 1) * var(--audio-gap))
+}
+
+.home-ebooks-marquee {
+    /* 6 × 240px + 5 × 20px = 1540px */
+    width: calc(var(--ebook-visible) * var(--ebook-card-w) + (var(--ebook-visible) - 1) * var(--ebook-gap))
+}
+
+/* ── Moving track ── */
+.home-audio-marquee__track,
+.home-ebooks-marquee__track {
+    display: flex;
+    flex-wrap: nowrap;
+    /* single row, no wrapping ever */
+    width: max-content;
+    /* grow to hold original + clone */
+    will-change: transform
+}
+
+.home-audio-marquee__track {
+    gap: var(--audio-gap);
+    animation: marquee-rtl 34s linear infinite
+}
+
+.home-ebooks-marquee__track {
+    gap: var(--ebook-gap);
+    animation: marquee-ltr 30s linear infinite
+}
+
+/* ── Pause on hover ── */
+.home-audio-marquee:hover .home-audio-marquee__track,
+.home-ebooks-marquee:hover .home-ebooks-marquee__track {
+    animation-play-state: paused
+}
+
+/* ── Card sizing — fixed width, no shrink or grow ── */
+.home-audio-marquee .audio-card {
+    width: var(--audio-card-w);
+    min-width: var(--audio-card-w);
+    flex: 0 0 var(--audio-card-w)
+}
+
+.home-ebooks-marquee .book-card {
+    width: var(--ebook-card-w);
+    min-width: var(--ebook-card-w);
+    flex: 0 0 var(--ebook-card-w)
+}
+
+/* ── Accessibility: clone is visual-only ── */
+.home-audio-marquee__track .marquee-clone,
+.home-ebooks-marquee__track .marquee-clone {
+    display: contents
+        /* layout as if the children were direct siblings */
+}
+
+/* ── Reduced motion: freeze track, single row, hide clone ── */
+@media (prefers-reduced-motion: reduce) {
+
+    .home-audio-marquee__track,
+    .home-ebooks-marquee__track {
+        animation: none !important;
+        flex-wrap: nowrap;
+        /* keep single row even without animation */
+        overflow-x: auto;
+        /* let user scroll manually if needed */
+        width: 100%
+    }
+
+    .home-audio-marquee,
+    .home-ebooks-marquee {
+        overflow: visible
+            /* let the static row be fully visible */
+    }
+
+    .home-audio-marquee__track .marquee-clone,
+    .home-ebooks-marquee__track .marquee-clone {
+        display: none
+            /* remove duplicate content entirely */
+    }
+}
+
+/* ── Tablet: 4 cards visible ── */
+@media (max-width: 1200px) {
+    .home-audio-marquee {
+        --audio-card-w: 260px;
+        --audio-visible: 4
+    }
+
+    .home-ebooks-marquee {
+        --ebook-card-w: 210px;
+        --ebook-visible: 4
+    }
+}
+
+/* ── Narrow tablet: 3 cards ── */
+@media (max-width: 900px) {
+    .home-audio-marquee {
+        --audio-card-w: 240px;
+        --audio-gap: 16px;
+        --audio-visible: 3
+    }
+
+    .home-ebooks-marquee {
+        --ebook-card-w: 195px;
+        --ebook-gap: 16px;
+        --ebook-visible: 3
+    }
+}
+
+/* ── Mobile: 1–2 cards, slower speeds ── */
+@media (max-width: 600px) {
+    .home-audio-marquee {
+        --audio-card-w: 240px;
+        --audio-gap: 14px;
+        --audio-visible: 1;
+        /* at 1 visible card the width formula gives exactly one card width,
+           so clamp to a sensible minimum and let the section edge clip it */
+        width: min(calc(var(--audio-visible) * var(--audio-card-w) + (var(--audio-visible) - 1) * var(--audio-gap)),
+                100%)
+    }
+
+    .home-ebooks-marquee {
+        --ebook-card-w: 195px;
+        --ebook-gap: 14px;
+        --ebook-visible: 1;
+        width: min(calc(var(--ebook-visible) * var(--ebook-card-w) + (var(--ebook-visible) - 1) * var(--ebook-gap)),
+                100%)
+    }
+
+    .home-audio-marquee__track {
+        animation-duration: 26s
+    }
+
+    .home-ebooks-marquee__track {
+        animation-duration: 24s
+    }
+}
+
+/* ─── end marquee ─────────────────────────────────────────────────────────── */
 
 .service-preview {
     padding-block: 110px;
@@ -5633,6 +5833,180 @@ html[data-theme="dark"] .detail-meta-item {
 
 .admin-content-form .form-card {
     min-width: 0
+}
+
+.lyrics-editor-form-card {
+    grid-column: 1 / -1
+}
+
+.lyrics-editor {
+    margin: 20px 0 24px;
+    border: 1px solid var(--line);
+    background: #fff;
+}
+
+.lyrics-editor-tabs,
+.lyrics-format-toolbar,
+.lyrics-editor-heading,
+.lyrics-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.lyrics-editor-tabs {
+    border-bottom: 1px solid var(--line);
+    padding: 0 12px;
+}
+
+.lyrics-editor-tabs button,
+.lyrics-format-toolbar button,
+.lyrics-preview-toggle {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text);
+    padding: 8px 10px;
+}
+
+.lyrics-editor-tabs button[aria-selected="true"],
+.lyrics-format-toolbar button.active {
+    border-color: var(--line);
+    background: var(--cream);
+    color: var(--green);
+}
+
+.lyrics-editor-heading {
+    justify-content: space-between;
+    padding: 16px 18px 10px;
+}
+
+.lyrics-editor-heading h3,
+.lyrics-editor-preview h4 {
+    margin: 0 0 3px;
+    font-size: 16px;
+}
+
+.lyrics-editor-heading small {
+    color: var(--muted);
+}
+
+.lyrics-format-toolbar {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    border-block: 1px solid var(--line);
+    background: #faf9f6;
+}
+
+.lyrics-format-toolbar button:disabled {
+    cursor: not-allowed;
+    opacity: .48;
+}
+
+.lyrics-format-toolbar label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+    font-size: 11px;
+}
+
+.lyrics-format-toolbar input[type="color"] {
+    width: 30px;
+    height: 30px;
+    padding: 2px;
+    border: 1px solid var(--line);
+    background: #fff;
+}
+
+.lyrics-format-toolbar select {
+    width: auto;
+    min-width: 82px;
+    padding: 6px 22px 6px 8px;
+    border: 1px solid var(--line);
+    background: #fff;
+}
+
+.lyrics-toolbar-group {
+    border-inline: 1px solid var(--line);
+    padding-inline: 5px;
+}
+
+.lyrics-editor-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.lyrics-editor-workspace.with-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lyrics-editor-canvas,
+.lyrics-editor-preview {
+    min-width: 0;
+    min-height: 260px;
+    padding: 24px;
+}
+
+.lyrics-editor-canvas .ProseMirror {
+    min-height: 210px;
+    outline: none;
+    line-height: 1.9;
+    white-space: pre-wrap;
+}
+
+.lyrics-editor-canvas [lang="ur"],
+.lyric-rich-view[lang="ur"] {
+    font-family: var(--urdu), serif;
+    font-size: 20px;
+    line-height: 2.1;
+}
+
+.lyrics-editor-canvas [lang="hi"],
+.lyric-rich-view[lang="hi"] {
+    font-family: "Noto Sans Devanagari", sans-serif;
+}
+
+.lyrics-editor-canvas [lang="en"],
+.lyric-rich-view[lang="en"] {
+    font-family: var(--sans);
+}
+
+.lyrics-editor-preview {
+    border-inline-start: 1px solid var(--line);
+    background: #fcfbf8;
+}
+
+.lyrics-editor-preview .lyric-rich-view {
+    line-height: 1.9;
+    white-space: pre-wrap;
+}
+
+.lyric-rich-view .ProseMirror {
+    outline: none;
+}
+
+.lyric-rich-view[dir="rtl"] {
+    text-align: right;
+}
+
+.lyrics-editor-preview .lyric-rich-view[lang="ur"] {
+    text-align: right;
+}
+
+@media (max-width: 640px) {
+    .lyrics-editor-workspace.with-preview {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lyrics-editor-canvas,
+    .lyrics-editor-preview {
+        padding: 18px;
+    }
+
+    .lyrics-editor-preview {
+        border-inline-start: 0;
+        border-top: 1px solid var(--line);
+    }
 }
 
 .admin-choice-group {

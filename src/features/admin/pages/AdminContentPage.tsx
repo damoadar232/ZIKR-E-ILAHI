@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+﻿import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useContentCollection } from "../../../app/hooks/useContentCollection";
 import { LocalizedText, useInterfaceText } from "../../../app/providers/interfaceLanguage";
 import { Icon, Logo } from "../../../components/ui";
@@ -7,6 +7,9 @@ import { quranAyahRecords } from "../../quran/data/quranData";
 import { surahData } from "../../quran/data/surahMetadata";
 import { contentRepository } from "../services/contentRepository.js";
 import { getYouTubeVideoId, slugifyLyricsTitle } from "../../lyrics/utils/youtubeVideo.js";
+import { isLyricDocument, lyricDocumentToText, textToLyricDocument } from "../../lyrics/utils/lyricDocument.js";
+import { LyricDocumentView } from "../../lyrics/components/LyricRichText";
+import { LyricsEditor } from "../components/LyricsEditor";
 
 type ContentKind = "lyrics" | "quranAyahs";
 type PageMode = "dashboard" | "list" | "form" | "detail";
@@ -31,6 +34,10 @@ function getReciters(record: AdminRecord) {
 
 function getLyricsDraft(record?: AdminRecord) {
     const versions = Object.fromEntries(languageOptions.map(({ code }) => [code, record?.languageVersions?.find((version: any) => version.code === code)?.text || ""]));
+    const documents = Object.fromEntries(languageOptions.map(({ code }) => {
+        const version = record?.languageVersions?.find((item: any) => item.code === code);
+        return [code, isLyricDocument(version?.document) ? version.document : textToLyricDocument(version?.text || "")];
+    }));
     const videos = (record?.relatedVideos || []).map((video: any) => video.url).filter(Boolean).join("\n");
     return {
         title: record?.title || "",
@@ -43,6 +50,7 @@ function getLyricsDraft(record?: AdminRecord) {
         bookId: record?.bookId || "",
         relatedVideoUrls: videos,
         versions,
+        documents,
         status: record?.status || "draft",
     };
 }
@@ -62,7 +70,7 @@ function ErrorMessage({ message }: { message: string }) {
     return message ? <p className="admin-form-error" role="alert">{message}</p> : null;
 }
 
-export function AdminContentPage({ edit = false, go, isLoggedIn }: { edit?: boolean; go: (route: string) => void; isLoggedIn: boolean }) {
+export function AdminContentPage({ edit = false, go, isLoggedIn, onLogout }: { edit?: boolean; go: (route: string) => void; isLoggedIn: boolean; onLogout?: () => void }) {
     const t = useInterfaceText();
     const lyricRecords = useContentCollection<AdminRecord>("lyrics", initialLyrics as AdminRecord[]);
     const quranRecords = useContentCollection<AdminRecord>("quranAyahs", quranAyahRecords as AdminRecord[]);
@@ -75,12 +83,15 @@ export function AdminContentPage({ edit = false, go, isLoggedIn }: { edit?: bool
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const draftBaseline = useRef(JSON.stringify(getLyricsDraft()));
 
     useEffect(() => {
         if (edit) {
             setKind("lyrics");
             setSelectedId("");
-            setDraft(getLyricsDraft());
+            const nextDraft = getLyricsDraft();
+            setDraft(nextDraft);
+            draftBaseline.current = JSON.stringify(nextDraft);
             setMode("form");
         }
     }, [edit]);
@@ -106,7 +117,9 @@ export function AdminContentPage({ edit = false, go, isLoggedIn }: { edit?: bool
     const startCreate = (nextKind = kind) => {
         setKind(nextKind);
         setSelectedId("");
-        setDraft(nextKind === "lyrics" ? getLyricsDraft() : getQuranDraft());
+        const nextDraft = nextKind === "lyrics" ? getLyricsDraft() : getQuranDraft();
+        setDraft(nextDraft);
+        draftBaseline.current = JSON.stringify(nextDraft);
         setError("");
         setMessage("");
         setMode("form");
@@ -114,7 +127,9 @@ export function AdminContentPage({ edit = false, go, isLoggedIn }: { edit?: bool
 
     const startEdit = (record: AdminRecord) => {
         setSelectedId(record.id);
-        setDraft(kind === "lyrics" ? getLyricsDraft(record) : getQuranDraft(record));
+        const nextDraft = kind === "lyrics" ? getLyricsDraft(record) : getQuranDraft(record);
+        setDraft(nextDraft);
+        draftBaseline.current = JSON.stringify(nextDraft);
         setError("");
         setMessage("");
         setMode("form");
@@ -131,11 +146,17 @@ export function AdminContentPage({ edit = false, go, isLoggedIn }: { edit?: bool
             if (kind === "lyrics") {
                 const title = String(draft.title || "").trim();
                 const slug = String(draft.slug || "").trim() || slugifyLyricsTitle(title);
-                const versions = languageOptions.flatMap((language) => {
-                    const text = String(draft.versions?.[language.code] || "").trim();
+                const richLanguageCodes = ["ur", "hi", "en"];
+                const languageCodes = [...new Set([...(selectedRecord?.languageVersions || []).map((version: any) => version.code), ...languageOptions.map(({ code }) => code)])];
+                const versions = languageCodes.flatMap((code) => {
+                    const existing = selectedRecord?.languageVersions?.find((item: any) => item.code === code);
+                    const language = languageOptions.find((item) => item.code === code);
+                    if (!language) return existing ? [existing] : [];
+                    const document = richLanguageCodes.includes(code) ? draft.documents?.[code] : existing?.document;
+                    const sourceText = richLanguageCodes.includes(code) && isLyricDocument(document) ? lyricDocumentToText(document) : draft.versions?.[code];
+                    const text = String(sourceText || "").trim();
                     if (!text) return [];
-                    const existing = selectedRecord?.languageVersions?.find((item: any) => item.code === language.code);
-                    return [{ ...existing, ...language, text }];
+                    return [{ ...existing, ...language, text, ...(isLyricDocument(document) ? { document } : {}) }];
                 });
                 if (!title) throw new Error("A lyrics title is required.");
                 if (!versions.length) throw new Error("Add the existing lyrics text in at least one language.");
@@ -223,7 +244,7 @@ export function AdminContentPage({ edit = false, go, isLoggedIn }: { edit?: bool
     };
 
     if (!isLoggedIn) {
-        return <main className="admin-access"><Logo /><h1>Admin sign-in required</h1><p>The current project has no trusted admin identity or server authorization. Sign in only to preview the browser demo panel.</p><button className="btn btn-primary" onClick={() => go("login")}>Sign in</button></main>;
+        return <main className="admin-access"><Logo /><h1>Admin sign-in required</h1><p>Sign in with your administrator credentials to access the content admin panel.</p><button className="btn btn-primary" onClick={() => go("login")}>Sign in</button></main>;
     }
 
     return (
@@ -234,6 +255,7 @@ export function AdminContentPage({ edit = false, go, isLoggedIn }: { edit?: bool
                 <button className={mode === "dashboard" ? "active" : ""} onClick={() => setMode("dashboard")}><Icon name="grid" size={17} />Dashboard</button>
                 <button className={kind === "lyrics" && mode !== "dashboard" ? "active" : ""} onClick={() => openList("lyrics")}><Icon name="pen" size={17} />Lyrics Management</button>
                 <button className={kind === "quranAyahs" && mode !== "dashboard" ? "active" : ""} onClick={() => openList("quranAyahs")}><Icon name="book" size={17} />Quran Management</button>
+                <button className="admin-signout" onClick={() => onLogout?.()}><Icon name="x" size={17} />Sign out</button>
             </aside>
             <div className="admin-main">
                 <header><div><small>ADMINISTRATION</small><h1>{mode === "dashboard" ? "Content dashboard" : `${kind === "lyrics" ? "Lyrics" : "Quran Ayah"} management`}</h1></div><span className="admin-demo-badge">Browser demo storage</span></header>
@@ -256,7 +278,7 @@ export function AdminContentPage({ edit = false, go, isLoggedIn }: { edit?: bool
 
                 {mode === "detail" && selectedRecord && <section className="admin-detail form-card">
                     <div className="admin-detail-heading"><div><span className={`status ${selectedRecord.status}`}>{selectedRecord.status}</span><h2>{kind === "lyrics" ? selectedRecord.title : `${surahData[selectedRecord.surahNumber - 1]?.[1]} ${selectedRecord.surahNumber}:${selectedRecord.ayahNumber}`}</h2><small>{selectedRecord.id}</small></div><div><button onClick={() => startEdit(selectedRecord)}>Edit</button><button onClick={() => togglePublished(selectedRecord)}>{selectedRecord.status === "published" ? "Unpublish" : "Publish"}</button><button className="danger-action" onClick={() => deleteRecord(selectedRecord)}>Delete</button></div></div>
-                    {kind === "lyrics" ? <><p><b>Reciters:</b> {getReciters(selectedRecord).join(", ") || "Not supplied"}</p><p><b>Written by:</b> {selectedRecord.writer || poets.find((poet) => poet.id === selectedRecord.writerId)?.name || "Not supplied"}</p>{selectedRecord.languageVersions?.map((version: any) => <section key={version.code} lang={version.code} dir={version.dir || "ltr"}><h3>{version.label}</h3><pre className="admin-preserved-text">{version.text}</pre></section>)}<p><b>Related video URLs:</b> {(selectedRecord.relatedVideos || []).map((video: any) => video.url).filter(Boolean).join(" · ") || "None"}</p></> : <><p className="admin-arabic-preview" lang="ar" dir="rtl">{selectedRecord.arabic || "Arabic text not supplied"}</p>{Object.entries(selectedRecord.translations || {}).map(([code, text]) => <p key={code} lang={code} dir={code === "ur" ? "rtl" : "ltr"}><b>{code.toUpperCase()}:</b> {String(text)}</p>)}</>}
+                    {kind === "lyrics" ? <><p><b>Reciters:</b> {getReciters(selectedRecord).join(", ") || "Not supplied"}</p><p><b>Written by:</b> {selectedRecord.writer || poets.find((poet) => poet.id === selectedRecord.writerId)?.name || "Not supplied"}</p>{selectedRecord.languageVersions?.map((version: any) => <section key={version.code} lang={version.code} dir={version.dir || "ltr"}><h3>{version.label}</h3>{isLyricDocument(version.document) ? <LyricDocumentView document={version.document} language={version.code} dir={version.dir || "ltr"} /> : <pre className="admin-preserved-text">{version.text}</pre>}</section>)}<p><b>Related video URLs:</b> {(selectedRecord.relatedVideos || []).map((video: any) => video.url).filter(Boolean).join(" · ") || "None"}</p></> : <><p className="admin-arabic-preview" lang="ar" dir="rtl">{selectedRecord.arabic || "Arabic text not supplied"}</p>{Object.entries(selectedRecord.translations || {}).map(([code, text]) => <p key={code} lang={code} dir={code === "ur" ? "rtl" : "ltr"}><b>{code.toUpperCase()}:</b> {String(text)}</p>)}</>}
                 </section>}
 
                 {mode === "detail" && !selectedRecord && <div className="admin-empty"><b>Record unavailable</b><button onClick={() => setMode("list")}>Return to list</button></div>}
@@ -270,9 +292,9 @@ export function AdminContentPage({ edit = false, go, isLoggedIn }: { edit?: bool
                             <fieldset className="admin-choice-group"><legend>Subjects</legend>{lyricSubjects.map((subject) => <label key={subject.id}><input type="checkbox" checked={draft.subjectIds.includes(subject.id)} onChange={(event) => setField("subjectIds", event.target.checked ? [...draft.subjectIds, subject.id] : draft.subjectIds.filter((id: string) => id !== subject.id))} />{subject.name}</label>)}</fieldset>
                             <label className="field"><span>Tags (comma separated)</span><input value={draft.tags} onChange={(event) => setField("tags", event.target.value)} /></label><label className="field"><span>Related YouTube URLs (one per line)</span><textarea rows={4} value={draft.relatedVideoUrls} onChange={(event) => setField("relatedVideoUrls", event.target.value)} placeholder="https://youtu.be/…" /></label>
                         </section>
-                        <section className="form-card"><h2>Lyrics content by language</h2><p className="form-help">Enter only verified lyrics. Empty language fields are not published.</p>{languageOptions.map((language) => <label className="field" key={language.code}><span>{language.label}</span><textarea lang={language.code} dir={language.dir} rows={6} value={draft.versions[language.code]} onChange={(event) => setDraft((current: any) => ({ ...current, versions: { ...current.versions, [language.code]: event.target.value } }))} /></label>)}<label className="field"><span>Publication status</span><select value={draft.status} onChange={(event) => setField("status", event.target.value)}><option value="draft">Draft</option><option value="published">Published</option></select></label></section>
+                        <section className="form-card lyrics-editor-form-card"><h2>Lyrics content by language</h2><p className="form-help">Enter only verified lyrics. Empty language fields are not published.</p><LyricsEditor documents={draft.documents || {}} onChange={(code, document) => setDraft((current: any) => ({ ...current, documents: { ...current.documents, [code]: document }, versions: { ...current.versions, [code]: lyricDocumentToText(document) } }))} /><label className="field"><span>Publication status</span><select value={draft.status} onChange={(event) => setField("status", event.target.value)}><option value="draft">Draft</option><option value="published">Published</option></select></label></section>
                     </> : <section className="form-card"><h2>Quran Ayah content</h2><p className="form-help">This editor covers local Ayah records only. Missing verses are not generated or implied complete.</p><div className="two-fields"><label className="field"><span>Surah *</span><select value={draft.surahNumber} onChange={(event) => setField("surahNumber", event.target.value)}>{surahData.map((surah, index) => <option value={index + 1} key={index}>{index + 1}. {surah[1]}</option>)}</select></label><label className="field"><span>Ayah number *</span><input type="number" min="1" max={surahData[Number(draft.surahNumber) - 1]?.[2] || 1} value={draft.ayahNumber} onChange={(event) => setField("ayahNumber", event.target.value)} /></label></div><label className="field"><span>Arabic text</span><textarea lang="ar" dir="rtl" rows={5} value={draft.arabic} onChange={(event) => setField("arabic", event.target.value)} /></label>{languageOptions.map((language) => <label className="field" key={language.code}><span>{language.label} translation</span><textarea lang={language.code} dir={language.dir} rows={4} value={draft.translations[language.code]} onChange={(event) => setDraft((current: any) => ({ ...current, translations: { ...current.translations, [language.code]: event.target.value } }))} /></label>)}<label className="field"><span>Publication status</span><select value={draft.status} onChange={(event) => setField("status", event.target.value)}><option value="draft">Draft</option><option value="published">Published</option></select></label></section>}
-                    <div className="admin-form-actions"><button type="button" onClick={() => setMode(selectedId ? "detail" : "list")}>Cancel</button><button className="btn btn-primary" type="submit" disabled={isSaving}>{isSaving ? "Saving…" : "Save record"}</button></div>
+                    <div className="admin-form-actions"><button type="button" onClick={() => { if (JSON.stringify(draft) !== draftBaseline.current && !window.confirm("Discard your unsaved changes?")) return; setMode(selectedId ? "detail" : "list"); }}>Cancel</button><button className="btn btn-primary" type="submit" disabled={isSaving}>{isSaving ? "Saving…" : "Save record"}</button></div>
                 </form>}
             </div>
         </main>
